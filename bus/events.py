@@ -62,9 +62,13 @@ EXPOSURE_UPDATE     = "fx.exposure.update"
 MARKET_BRIEF        = "fx.market.brief"
 REFORECAST_TRIGGER  = "fx.reforecast.trigger"
 
+# MakerChecker → all consumers
+PROPOSAL_APPROVED    = "maker_checker.proposal.approved"
+
 # Operations Agent → all consumers
 FUND_MOVEMENT_REQ    = "ops.fund.movement.request"
 FUND_MOVEMENT_STATUS = "ops.fund.movement.status"
+NOSTRO_BALANCE_UPDATE = "ops.nostro.balance.update"
 WINDOW_CLOSING       = "ops.window.closing"
 HOLIDAY_LOOKAHEAD    = "ops.holiday.lookahead"
 TRANSFER_CONFIRMED   = "ops.transfer.confirmed"
@@ -77,8 +81,10 @@ ALL_EVENT_TYPES: list[str] = [
     EXPOSURE_UPDATE,
     MARKET_BRIEF,
     REFORECAST_TRIGGER,
+    PROPOSAL_APPROVED,
     FUND_MOVEMENT_REQ,
     FUND_MOVEMENT_STATUS,
+    NOSTRO_BALANCE_UPDATE,
     WINDOW_CLOSING,
     HOLIDAY_LOOKAHEAD,
     TRANSFER_CONFIRMED,

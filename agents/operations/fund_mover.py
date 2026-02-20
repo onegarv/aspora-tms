@@ -394,6 +394,10 @@ class FundMover:
             raise ValueError(f"No nostro account configured for {currency}")
         return acc
 
+    def available_balance(self, currency: str) -> Decimal:
+        """Return the current available (unreserved) balance for a currency."""
+        return self._tracker.available(currency)
+
     async def execute_proposal(
         self, proposal: FundMovementProposal
     ) -> TransferExecution:
