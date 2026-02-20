@@ -1,0 +1,12 @@
+#!/bin/bash
+# Remind to update PROGRESS.md if any source files changed
+CHANGED=$(git diff --cached --name-only | grep -E '\.(py|ts|tsx) | head -1)
+if [ -n "$CHANGED" ]; then
+  PROGRESS_CHANGED=$(git diff --cached --name-only | grep 'PROGRESS.md')
+  if [ -z "$PROGRESS_CHANGED" ]; then
+    echo ""
+    echo "⚠️  Source files changed but docs/PROGRESS.md not updated."
+    echo "   Consider updating progress tracking."
+    echo ""
+  fi
+fi
