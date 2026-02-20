@@ -398,6 +398,29 @@ class FundMover:
         """Return the current available (unreserved) balance for a currency."""
         return self._tracker.available(currency)
 
+    def all_balances(self) -> dict[str, dict[str, Decimal]]:
+        """Return available, reserved, and total for every tracked currency."""
+        result: dict[str, dict[str, Decimal]] = {}
+        for ccy in self._tracker._balances:
+            avail    = self._tracker.available(ccy)
+            reserved = self._tracker._reserved.get(ccy, Decimal(0))
+            total    = self._tracker._balances.get(ccy, Decimal(0))
+            result[ccy] = {"available": avail, "reserved": reserved, "total": total}
+        return result
+
+    def list_executions(
+        self,
+        currency: str | None = None,
+        state: str | None = None,
+    ) -> list[TransferExecution]:
+        """List executions, optionally filtered by currency and/or state."""
+        execs = self._store.list_all()
+        if currency:
+            execs = [e for e in execs if e.currency.upper() == currency.upper()]
+        if state:
+            execs = [e for e in execs if e.state.value == state.lower()]
+        return execs
+
     async def execute_proposal(
         self, proposal: FundMovementProposal
     ) -> TransferExecution:

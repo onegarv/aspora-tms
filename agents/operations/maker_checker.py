@@ -183,6 +183,21 @@ class MakerCheckerWorkflow:
             "approvals": proposal.approvals_count,
         }
 
+    async def list_proposals(
+        self,
+        status: str | None = None,
+        currency: str | None = None,
+    ) -> list[FundMovementProposal]:
+        proposals = await self.db.list_all()
+        if status:
+            proposals = [p for p in proposals if p.status.value == status.lower()]
+        if currency:
+            proposals = [p for p in proposals if p.currency.upper() == currency.upper()]
+        return proposals
+
+    async def get_proposal(self, proposal_id: str) -> FundMovementProposal | None:
+        return await self.db.get(proposal_id)
+
     async def reject(self, proposal_id: str, checker_id: str, reason: str) -> dict:
         """Checker explicitly rejects a proposal."""
         proposal = await self.db.get(proposal_id)
