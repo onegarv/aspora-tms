@@ -27,6 +27,7 @@ ENV/
 .env
 .env.*
 *.env
+!.env.example
 secrets.yaml
 secrets.yml
 credentials.json
