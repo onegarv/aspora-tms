@@ -53,9 +53,30 @@ def _post(path: str, payload: dict, timeout: int) -> dict:
     ctx.check_hostname = False
     ctx.verify_mode    = ssl.CERT_NONE
     conn = http.client.HTTPSConnection(METABASE_HOST, timeout=timeout, context=ctx)
-    conn.request("POST", path, body=body, headers=_HEADERS)
-    resp = conn.getresponse()
-    return json.loads(resp.read())
+    try:
+        conn.request("POST", path, body=body, headers=_HEADERS)
+        resp = conn.getresponse()
+        return json.loads(resp.read())
+    finally:
+        conn.close()
+
+
+_SQL_RETRY_TIMEOUTS = [600, 900, 1200]  # 10m, 15m, 20m
+
+
+def _post_with_retry(path: str, payload: dict, timeouts: list[int]) -> dict:
+    """POST with escalating timeouts; used for slow Redshift SQL queries."""
+    last_exc: Exception | None = None
+    for attempt, timeout in enumerate(timeouts, 1):
+        try:
+            return _post(path, payload, timeout)
+        except Exception as exc:
+            last_exc = exc
+            logger.warning(
+                "Metabase SQL attempt %d/%d failed (%s), timeout=%ds",
+                attempt, len(timeouts), exc, timeout,
+            )
+    raise last_exc  # type: ignore[misc]
 
 
 def _run_question(question_id: int, max_results: int = 2000) -> list[dict]:
@@ -70,7 +91,7 @@ def _run_question(question_id: int, max_results: int = 2000) -> list[dict]:
 
 def _run_sql(sql: str, max_results: int = 2000) -> list[dict]:
     """Execute raw SQL on Redshift via Metabase; returns list of row-dicts."""
-    result = _post(
+    result = _post_with_retry(
         "/api/dataset",
         {
             "database": REDSHIFT_DB_ID,
@@ -78,7 +99,7 @@ def _run_sql(sql: str, max_results: int = 2000) -> list[dict]:
             "native": {"query": sql},
             "constraints": {"max-results": max_results},
         },
-        timeout=_TIMEOUT_SLOW,
+        _SQL_RETRY_TIMEOUTS,
     )
     return _parse(result)
 
@@ -112,10 +133,10 @@ def fetch_live_rates() -> Optional[dict[str, float]]:
         rate_map = {r["currency_from"]: float(r["avg_rate"]) for r in rows}
 
         rates = {
-            "USD_INR": round(rate_map.get("USD", usd_inr or 84.0), 4),
-            "GBP_INR": round(rate_map.get("GBP", 106.0), 4),
-            "EUR_INR": round(rate_map.get("EUR",  91.0), 4),
-            "AED_INR": round(rate_map.get("AED",  22.9), 4),
+            "USD_INR": round(rate_map.get("USD", usd_inr or 91.0), 4),
+            "GBP_INR": round(rate_map.get("GBP", 122.31), 4),
+            "EUR_INR": round(rate_map.get("EUR", 107.22), 4),
+            "AED_INR": round(rate_map.get("AED",  24.71), 4),
         }
         logger.info(
             "Live rates fetched: USD/INR=%.4f  GBP/INR=%.4f  EUR/INR=%.4f  AED/INR=%.4f",

@@ -52,7 +52,7 @@ class RateResolver:
 
         if strategy == "worst_case":
             effective["USD_INR"] = max(
-                float(range_high), spot_rates.get("USD_INR", 84.0)
+                float(range_high), spot_rates.get("USD_INR", 91.0)
             )
         elif strategy == "midpoint":
             effective["USD_INR"] = round(
