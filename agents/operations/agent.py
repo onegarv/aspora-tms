@@ -635,6 +635,7 @@ class OperationsAgent(BaseAgent):
                     "rail":              rail,
                     "minutes_remaining": mins,
                     "close_time_utc":    now_utc.isoformat(),
+                    "generated_at":      now_utc.isoformat(),
                 }
                 # Add dynamic IST equivalent for rails that have a fixed local close time.
                 # AED uses a GST cutoff (not a TransferWindow) so is excluded.
