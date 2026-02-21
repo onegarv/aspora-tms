@@ -3,7 +3,7 @@
 Last updated: 2026-02-21
 Kanban board: `docs/KANBAN.md`
 
-## Overall: 6/25 complete
+## Overall: 7/25 complete
 
 ## Operations Agent (You) — 6/6 ✅
 - [x] R1: Window Manager — Banking hours, timezone-aware transfer windows, DST
@@ -25,8 +25,9 @@ Kanban board: `docs/KANBAN.md`
 - [ ] D4: Treasury Dashboard — Exposure view, deal blotter, P&L tracker
 - [ ] D5: Admin Console — Multiplier config, risk limits, holiday overrides
 
-## FX Analyst Agent (Colleague B) — 0/5
-- [~] R10: Composite Rate Engine — 24/7 implied spot, basis adjustment
+## FX Analyst Agent (Colleague B) — 1/5
+- [x] R10: Composite Rate Engine — FX Band Predictor (Baniya Buddhi) 5-model ensemble
+         integrated via bridge adapter in `agents/fx_analyst/agent.py`
 - [ ] R11: Market Intel & NDF Monitor — News/sentiment, macro data, RBI
 - [ ] R12: FX Forecaster — 1h/1d/1w rate forecasts (LSTM, ensemble, macro)
 - [ ] R13: Tranche Engine — Sizing, signal-weighted timing, instrument selection
@@ -49,7 +50,7 @@ Kanban board: `docs/KANBAN.md`
 
 ## Changelog
 - 2026-02-20: Ops Agent (R1-R6) complete
-- {date}: {what changed}
+- 2026-02-21: Merged integration/fx (FX Band Predictor); built agents/fx_analyst/agent.py bridge adapter — R10 done
 
 ---
 
