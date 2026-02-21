@@ -265,8 +265,12 @@ class MakerCheckerWorkflow:
         return errors
 
     async def _execute(self, proposal: FundMovementProposal) -> dict:
-        """Mark as executed and publish PROPOSAL_APPROVED to the bus."""
-        proposal.status     = ProposalStatus.EXECUTED
+        """Mark as approved and publish PROPOSAL_APPROVED to the bus.
+
+        The status is set to APPROVED (not EXECUTED) because no bank transfer
+        has happened yet. EXECUTED is set by OpsAgent after FundMover confirms.
+        """
+        proposal.status     = ProposalStatus.APPROVED
         proposal.executed_at = datetime.utcnow()
         proposal.updated_at  = datetime.utcnow()
         await self.db.save(proposal)
