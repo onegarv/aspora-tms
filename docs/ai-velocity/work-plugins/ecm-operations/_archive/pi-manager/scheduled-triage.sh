@@ -2,8 +2,6 @@
 # ECM Scheduled Triage - Posts daily briefing to Slack
 # Runs without MCP - uses cached/static data + Slack API
 
-SLACK_TOKEN="xoxb-2973233574978-10503818816130-eD4lIp8QwJ1f7A7TdarIyTt4"
-SLACK_CHANNEL="C0AD6C36LVC"
 
 python3 << EOF
 import urllib.request
