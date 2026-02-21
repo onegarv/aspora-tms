@@ -12,7 +12,7 @@ from decimal import Decimal
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import balances, events, exposure, holidays, proposals, transfers, windows
+from api.routers import balances, deals, events, exposure, forecast, holidays, pnl, proposals, risk, transfers, windows
 
 
 def create_app(fund_mover, maker_checker, window_manager, calendar, bus) -> FastAPI:
@@ -48,6 +48,10 @@ def create_app(fund_mover, maker_checker, window_manager, calendar, bus) -> Fast
     app.include_router(windows.router,   prefix=PREFIX)
     app.include_router(holidays.router,  prefix=PREFIX)
     app.include_router(events.router,    prefix=PREFIX)
+    app.include_router(deals.router,     prefix=PREFIX)
+    app.include_router(pnl.router,       prefix=PREFIX)
+    app.include_router(forecast.router,  prefix=PREFIX)
+    app.include_router(risk.router,      prefix=PREFIX)
 
     return app
 

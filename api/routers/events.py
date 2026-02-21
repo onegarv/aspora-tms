@@ -1,10 +1,14 @@
 """
-Events router — GET /events and GET /events/{correlation_id}/trace
+Events router — GET /events, GET /events/stream (SSE), GET /events/{correlation_id}/trace
 """
 
 from __future__ import annotations
 
+import asyncio
+import json
+
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import StreamingResponse
 
 from api.auth import require_auth
 from api.schemas import EventSummary, _dt
@@ -37,6 +41,63 @@ async def list_events(
     events = list(reversed(events))
     events = events[:limit]
     return [_to_summary(e) for e in events]
+
+
+@router.get("/stream")
+async def stream_events_sse(
+    request: Request,
+    event_type: str | None = None,
+) -> StreamingResponse:
+    """
+    SSE endpoint — pushes events to the client as they arrive.
+
+    Use the browser EventSource API (not WebSocket).
+    Auth: no bearer token required — EventSource cannot set Authorization headers.
+
+    Query params:
+      event_type  — optional filter (e.g. "fx.deal.instruction")
+    """
+    bus = request.app.state.bus
+
+    async def generator():
+        seen_ids: set[str] = set()
+
+        # Replay existing events first so the client has context on connect
+        for e in bus.get_events(event_type):
+            seen_ids.add(e.event_id)
+            data = json.dumps({
+                "id": e.event_id,
+                "type": e.event_type,
+                "timestamp": _dt(e.timestamp_utc) or "",
+                "payload": dict(e.payload),
+            })
+            yield f"data: {data}\n\n"
+
+        # Poll for new events every 2 s
+        while True:
+            if await request.is_disconnected():
+                break
+            for e in bus.get_events(event_type):
+                if e.event_id not in seen_ids:
+                    seen_ids.add(e.event_id)
+                    data = json.dumps({
+                        "id": e.event_id,
+                        "type": e.event_type,
+                        "timestamp": _dt(e.timestamp_utc) or "",
+                        "payload": dict(e.payload),
+                    })
+                    yield f"data: {data}\n\n"
+            await asyncio.sleep(2)
+
+    return StreamingResponse(
+        generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable nginx response buffering
+        },
+    )
 
 
 @router.get("/{correlation_id}/trace", response_model=list[EventSummary], dependencies=[Depends(require_auth)])
