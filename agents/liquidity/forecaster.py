@@ -1,5 +1,5 @@
 """
-VolumeForecaster — same-weekday exponential moving average.
+VolumeForecaster — same-weekday exponential moving average with floor.
 
 Algorithm (per SPEC §3.2.1):
   For each corridor and target weekday, collect the N most-recent data points
@@ -8,6 +8,11 @@ Algorithm (per SPEC §3.2.1):
   weight.  Return the weighted average as the forecast USD volume.
 
   w_k = decay^k   where k=0 is the most-recent observation.
+
+Floor rule:
+  The forecast for each corridor is never lower than the previous week's
+  actual volume on the same weekday.  This prevents under-forecasting when
+  volumes are growing week-over-week.
 
 Confidence is based on how many same-weekday samples are available.
 """
@@ -56,7 +61,13 @@ class VolumeForecaster:
         Return {corridor: forecasted_volume_usd} for target_date.
 
         Uses the N most-recent observations matching target_date's weekday,
-        weighted by exponential decay.  Returns 0.0 for corridors with no data.
+        weighted by exponential decay.
+
+        Floor rule: forecast is always >= previous week's actual on the same
+        weekday (the most recent same-weekday observation).  This ensures we
+        never predict lower than what actually happened last week.
+
+        Returns 0.0 for corridors with no data.
         """
         target_dow = target_date.weekday()
         result: dict[str, float] = {}
@@ -75,8 +86,71 @@ class VolumeForecaster:
 
             weights   = [self.decay ** i for i in range(len(same_dow))]
             total_w   = sum(weights)
-            forecast  = sum(s["volume_usd"] * w for s, w in zip(same_dow, weights)) / total_w
+            ema_forecast = sum(s["volume_usd"] * w for s, w in zip(same_dow, weights)) / total_w
+
+            # Floor: never go below previous week's actual (most recent same-dow)
+            prev_week_actual = same_dow[0]["volume_usd"]
+            forecast = max(ema_forecast, prev_week_actual)
+
             result[corridor] = round(forecast, 2)
+
+        return result
+
+    def forecast_detailed(self, target_date: date) -> dict[str, dict]:
+        """
+        Return detailed forecast breakdown per corridor.
+
+        Returns:
+            {
+                "AED_INR": {
+                    "forecast_usd": 4500000.0,
+                    "ema_usd": 4200000.0,
+                    "prev_week_actual_usd": 4500000.0,
+                    "prev_week_date": "2026-02-16",
+                    "floor_applied": True,
+                    "samples": 8,
+                },
+                ...
+            }
+        """
+        target_dow = target_date.weekday()
+        result: dict[str, dict] = {}
+
+        for corridor, rows in self._volumes.items():
+            same_dow = sorted(
+                [r for r in rows if r.get("dow") == target_dow],
+                key=lambda r: r["date"],
+                reverse=True,
+            )[: self.lookback_weeks]
+
+            if not same_dow:
+                result[corridor] = {
+                    "forecast_usd": 0.0,
+                    "ema_usd": 0.0,
+                    "prev_week_actual_usd": 0.0,
+                    "prev_week_date": None,
+                    "floor_applied": False,
+                    "samples": 0,
+                }
+                continue
+
+            weights = [self.decay ** i for i in range(len(same_dow))]
+            total_w = sum(weights)
+            ema_forecast = sum(s["volume_usd"] * w for s, w in zip(same_dow, weights)) / total_w
+
+            prev_week_actual = same_dow[0]["volume_usd"]
+            prev_week_date = same_dow[0]["date"]
+            floor_applied = ema_forecast < prev_week_actual
+            forecast = max(ema_forecast, prev_week_actual)
+
+            result[corridor] = {
+                "forecast_usd": round(forecast, 2),
+                "ema_usd": round(ema_forecast, 2),
+                "prev_week_actual_usd": round(prev_week_actual, 2),
+                "prev_week_date": prev_week_date,
+                "floor_applied": floor_applied,
+                "samples": len(same_dow),
+            }
 
         return result
 
@@ -84,8 +158,8 @@ class VolumeForecaster:
         """
         Derive forecast confidence from data availability.
 
-        HIGH   ≥ 6 same-weekday samples per corridor (avg)
-        MEDIUM ≥ 3
+        HIGH   >= 6 same-weekday samples per corridor (avg)
+        MEDIUM >= 3
         LOW    < 3
         """
         if not self._volumes:

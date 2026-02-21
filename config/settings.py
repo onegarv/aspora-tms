@@ -68,6 +68,11 @@ class Settings(BaseSettings):
     forecast_lookback_weeks: int = 8
     max_total_multiplier: float = 2.5
 
+    # ── FX Band Predictor ───────────────────────────────────────────────
+    fx_predictor_host: str = "localhost"
+    fx_predictor_port: int = 8001
+    fx_rate_change_threshold_pct: float = 1.0   # Emit REFORECAST_TRIGGER on >1% move
+
     # ── Alerting ──────────────────────────────────────────────────────────
     alert_email: str = "treasury@aspora.com"
     slack_webhook_url: str = ""

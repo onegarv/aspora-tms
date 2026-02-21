@@ -33,6 +33,7 @@ from agents.liquidity.multipliers import MultiplierEngine
 from agents.liquidity.rda_checker import RDAChecker
 from bus.events import (
     FORECAST_READY,
+    FX_PREDICTION_READY,
     NOSTRO_BALANCE_UPDATE,
     REFORECAST_TRIGGER,
     SHORTFALL_ALERT,
@@ -88,6 +89,7 @@ class LiquidityAgent(BaseAgent):
         """Register event listeners and do initial Metabase data load."""
         await self.listen(REFORECAST_TRIGGER,    self._handle_reforecast)
         await self.listen(NOSTRO_BALANCE_UPDATE, self._handle_nostro_update)
+        await self.listen(FX_PREDICTION_READY,   self._handle_fx_prediction)
 
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._load_market_data)
@@ -218,6 +220,26 @@ class LiquidityAgent(BaseAgent):
             "Nostro balances updated: %s",
             {k: round(v, 0) for k, v in self._nostro_balances.items()},
         )
+
+    async def _handle_fx_prediction(self, event: Event) -> None:
+        """
+        FX Analyst Agent fires FX_PREDICTION_READY after fetching from
+        the FX Band Predictor API.  Update spot rates and re-run forecast.
+        """
+        self.logger.info(
+            "FX prediction received from %s  correlation_id=%s",
+            event.source_agent, event.correlation_id,
+        )
+        new_rates: dict[str, Any] = event.payload.get("rates", {})
+        if new_rates:
+            self._spot_rates.update(
+                {k: float(v) for k, v in new_rates.items()}
+            )
+            self.logger.info(
+                "Spot rates updated from FX prediction: %s",
+                {k: round(v, 4) for k, v in self._spot_rates.items()},
+            )
+        await self.run_daily()
 
     # ── Internal helpers ──────────────────────────────────────────────────────
 

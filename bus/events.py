@@ -61,6 +61,7 @@ DEAL_INSTRUCTION    = "fx.deal.instruction"
 EXPOSURE_UPDATE     = "fx.exposure.update"
 MARKET_BRIEF        = "fx.market.brief"
 REFORECAST_TRIGGER  = "fx.reforecast.trigger"
+FX_PREDICTION_READY = "fx.prediction.ready"
 
 # MakerChecker → all consumers
 PROPOSAL_APPROVED    = "maker_checker.proposal.approved"
@@ -81,6 +82,7 @@ ALL_EVENT_TYPES: list[str] = [
     EXPOSURE_UPDATE,
     MARKET_BRIEF,
     REFORECAST_TRIGGER,
+    FX_PREDICTION_READY,
     PROPOSAL_APPROVED,
     FUND_MOVEMENT_REQ,
     FUND_MOVEMENT_STATUS,
