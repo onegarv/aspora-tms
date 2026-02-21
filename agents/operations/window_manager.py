@@ -541,6 +541,58 @@ class WindowManager:
             added += 1
         return result
 
+    # ── Live convenience methods ───────────────────────────────────────────
+    # These call the core methods with datetime.now(timezone.utc) so callers
+    # don't need to manage the clock themselves.  The core methods remain pure
+    # and fully testable; only use these wrappers in production runtime code.
+
+    def is_open_right_now(self, currency: str) -> bool:
+        """Is this currency's window open right now?"""
+        from datetime import timezone
+        return self.is_open_now(currency, datetime.now(timezone.utc))
+
+    def minutes_until_close_now(self, currency: str) -> int:
+        """Minutes until operational close, measured from right now."""
+        from datetime import timezone
+        return self.minutes_until_close(currency, datetime.now(timezone.utc))
+
+    def next_open_now(self, currency: str) -> datetime:
+        """Next datetime this currency's window will open, from right now."""
+        from datetime import timezone
+        return self.next_open(currency, datetime.now(timezone.utc))
+
+    def opens_before_now(self, currency: str, deadline: datetime) -> bool:
+        """Will this window open before `deadline`, checking from right now?"""
+        from datetime import timezone
+        return self.opens_before(currency, deadline, datetime.now(timezone.utc))
+
+    def can_complete_path_now(
+        self,
+        source_currency: str,
+        target_currency: str,
+        amount: float,
+        deadline: datetime,
+    ) -> bool:
+        """Can the full settlement path complete before `deadline`, from right now?"""
+        from datetime import timezone
+        return self.can_complete_path(
+            source_currency, target_currency, amount, deadline,
+            datetime.now(timezone.utc),
+        )
+
+    def next_path_execution_time_now(
+        self,
+        source_currency: str,
+        target_currency: str,
+        amount: float,
+    ) -> datetime:
+        """Earliest datetime the settlement path can execute, from right now."""
+        from datetime import timezone
+        return self.next_path_execution_time(
+            source_currency, target_currency, amount,
+            datetime.now(timezone.utc),
+        )
+
     # ── Internal ──────────────────────────────────────────────────────────
 
     def _get_window(self, currency: str) -> TransferWindow:
