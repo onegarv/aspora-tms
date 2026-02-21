@@ -20,6 +20,7 @@ Usage:
 import argparse
 import json
 import os
+import subprocess
 import sys
 import time
 import traceback
@@ -31,6 +32,20 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def install_dependencies():
+    """Install Python dependencies from requirements.txt."""
+    req_file = os.path.join(PROJECT_DIR, "requirements.txt")
+    if not os.path.exists(req_file):
+        print("[setup] WARNING: requirements.txt not found — skipping dependency install")
+        return
+    print("[setup] Installing dependencies from requirements.txt...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", req_file, "-q"])
+    print("[setup] Dependencies installed.")
+
+
+install_dependencies()
 sys.path.insert(0, PROJECT_DIR)
 
 SAVED_DIR = os.path.join(PROJECT_DIR, "models", "saved")
