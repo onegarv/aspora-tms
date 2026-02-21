@@ -1,5 +1,5 @@
 """
-Baniya Buddhi — Walk-Forward Validation (Jan-Feb 2026)
+FX Band Predictor — Walk-Forward Validation (Jan-Feb 2026)
 
 Step 1: Retrain LSTM on 2015-2024 data (features from 2003+)
 Step 2: Walk-forward simulation Jan 2 — Feb 20, 2026
@@ -575,7 +575,7 @@ def _call_openrouter(prompt, max_tokens=2000, temperature=0.3):
 def _build_opus_prompt(rec):
     """Build full Opus prompt for a single day's analysis."""
     kf = rec["key_features"]
-    return f"""You are the reasoning engine for Baniya Buddhi, an institutional FX intelligence system processing $9.5M daily (₹86.3 crore) in USD/INR remittances.
+    return f"""You are the reasoning engine for FX Band Predictor, an institutional FX intelligence system processing $9.5M daily (₹86.3 crore) in USD/INR remittances.
 
 Analyze this prediction and explain the full reasoning — what the models saw, why they predicted what they predicted, and what actually happened. Be as detailed as needed. Do not hold back.
 
@@ -822,7 +822,7 @@ def step4_html_report(results, training_info):
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Baniya Buddhi — Walk-Forward Validation Report</title>
+<title>FX Band Predictor — Walk-Forward Validation Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -1087,7 +1087,7 @@ body {{
 <body>
 
 <div class="header">
-  <h1>🪙 Baniya Buddhi</h1>
+  <h1>🪙 FX Band Predictor</h1>
   <div class="subtitle">Walk-Forward Validation Report</div>
   <div class="date-range">January 2 — February 20, 2026</div>
   <div class="training-note">Models trained strictly on 2003–2024 data | Blind test on 2026</div>
@@ -1165,7 +1165,7 @@ body {{
 </div>
 
 <div class="footer">
-  <p><span class="brand">Baniya Buddhi v1.0</span> | Trained on 22 years of data (2003–2024)</p>
+  <p><span class="brand">FX Band Predictor v1.0</span> | Trained on 22 years of data (2003–2024)</p>
   <p>Models: XGBoost Regime + LSTM Range + Macro Signal</p>
   <p>Training cutoff: December 31, 2024 | Validation: January 2 — February 20, 2026</p>
 </div>
@@ -1416,7 +1416,7 @@ def step6_terminal_summary(results, html_path):
 
     print(f"""
 ╔══════════════════════════════════════════════════╗
-║     BANIYA BUDDHI — WALK-FORWARD VALIDATION      ║
+║     FX BAND PREDICTOR — WALK-FORWARD VALIDATION      ║
 ║         Jan 2, 2026 — Feb 20, 2026               ║
 ║      Trained on 2003-2024 | Blind test           ║
 ╠══════════════════════════════════════════════════╣
@@ -1460,7 +1460,7 @@ def _fmt_inr(amount):
 # ═══════════════════════════════════════════════════════════════════════════
 
 def main():
-    parser = argparse.ArgumentParser(description="Baniya Buddhi Walk-Forward Validation")
+    parser = argparse.ArgumentParser(description="FX Band Predictor Walk-Forward Validation")
     parser.add_argument("--step", type=int, default=0, help="Run specific step only (1-6)")
     parser.add_argument("--skip-opus", action="store_true", help="Skip Opus justifications")
     args = parser.parse_args()

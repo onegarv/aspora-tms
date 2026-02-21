@@ -1,5 +1,5 @@
 """
-Baniya Buddhi — LSTM v2 Retraining with BoundaryAwareLoss
+FX Band Predictor — LSTM v2 Retraining with BoundaryAwareLoss
 
 Step 3 of LSTM tuning pipeline:
   1. BoundaryAwareLoss: 0.35*high + 0.35*low + 0.15*close + 0.10*width + 0.05*invalid

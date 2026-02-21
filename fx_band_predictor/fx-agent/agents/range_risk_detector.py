@@ -1,5 +1,5 @@
 """
-Baniya Buddhi — Range Prediction Risk Detector
+FX Band Predictor — Range Prediction Risk Detector
 
 Detects when the LSTM range prediction is likely unreliable.
 Warns treasury to add manual buffer.

@@ -1002,7 +1002,7 @@ class FXPredictionAgent:
         rate_vs_5y = float(features_row.get("rate_vs_5y_avg", 0))
         momentum = float(features_row.get("momentum_consistency", 0))
 
-        prompt = f"""You are the reasoning engine behind Baniya Buddhi \
+        prompt = f"""You are the reasoning engine behind FX Band Predictor \
 — an AI-powered FX timing system built for institutional remittance \
 operations processing $9.5M daily (₹86.3 crore).
 
@@ -1335,7 +1335,7 @@ real money."""
             cpi = float(features_row.get("cpi_yoy", 0))
 
             prompt = (
-                "You are Baniya Buddhi \u2014 a sharp, experienced FX desk analyst "
+                "You are FX Band Predictor \u2014 a sharp, experienced FX desk analyst "
                 "who thinks like a seasoned Mumbai money market dealer.\n\n"
                 "Write a morning briefing for the treasury team. They process $9.5M daily "
                 "(\u20b986.3 crore) in USD to INR remittances and need to prefund Indian bank "
@@ -1524,7 +1524,7 @@ real money."""
             fed_change = float(features_row.get("fed_funds_change_3m", 0))
 
             prompt = (
-                "You are Baniya Buddhi. Interpret these market context signals "
+                "You are FX Band Predictor. Interpret these market context signals "
                 "for a treasury team processing $9.5M daily in USD/INR. "
                 "Be direct and specific.\n\n"
                 f"NDF CONTEXT:\n"
@@ -2316,20 +2316,20 @@ real money."""
             # Estimate gain: best_day rate vs current
             gain = 9_500_000 * 0.10  # conservative 10 paise estimate
             return (
-                f"Baniya Buddhi signals: convert now. "
+                f"FX Band Predictor signals: convert now. "
                 f"Rate expected to rise — lock in today's level. "
                 f"Estimated gain: ₹{gain:,.0f} on $9.5M."
             )
         elif overall_bias == "DOWN":
             saving = 9_500_000 * 0.10  # conservative 10 paise estimate
             return (
-                f"Baniya Buddhi signals: hold your dollars. "
+                f"FX Band Predictor signals: hold your dollars. "
                 f"Rate expected to fall — wait for better INR rate. "
                 f"Potential saving: ₹{saving:,.0f} on $9.5M."
             )
         else:
             return (
-                "Baniya Buddhi sees no clear edge this week. "
+                "FX Band Predictor sees no clear edge this week. "
                 "Convert operational minimums. Protect ₹86 crore "
                 "from unnecessary rate risk."
             )
@@ -2351,7 +2351,7 @@ def print_summary(output: dict) -> None:
 
     print()
     print("=" * 50)
-    print(f"  BANIYA BUDDHI — {date_str}")
+    print(f"  FX BAND PREDICTOR — {date_str}")
     print("=" * 50)
     print(f"  Current Rate:    {output['current_rate']:.4f} USD/INR")
     print(f"  48h Direction:   {direction} ({strength} signal)")

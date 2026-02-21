@@ -1,5 +1,5 @@
 """
-Baniya Buddhi — Final Validation: Retrain on 2003-2025, Blind Test Jan-Feb 2026
+FX Band Predictor — Final Validation: Retrain on 2003-2025, Blind Test Jan-Feb 2026
 
 Steps:
   1. Retrain XGBoost regime classifier (extend training through 2025)
@@ -1085,7 +1085,7 @@ def step4_html_report(results):
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Baniya Buddhi — Final Validation Report</title>
+<title>FX Band Predictor — Final Validation Report</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {{ --bg:#0A1628; --card:#111827; --surface:#1F2937; --gold:#F0B429;
@@ -1139,7 +1139,7 @@ td {{ padding:0.5rem; text-align:center; border-bottom:1px solid var(--border); 
 </head>
 <body>
 <div class="header">
-  <h1>🪙 Baniya Buddhi — Final Validation Report</h1>
+  <h1>🪙 FX Band Predictor — Final Validation Report</h1>
   <div class="sub">Trained: 2003–2025 | Blind Test: Jan–Feb 2026</div>
   <div class="meta">Both models retrained with full data through December 2025</div>
 </div>
@@ -1192,7 +1192,7 @@ td {{ padding:0.5rem; text-align:center; border-bottom:1px solid var(--border); 
 
 </div>
 <div class="footer">
-  <p class="brand">Baniya Buddhi v2.0 | Sharp money. Sharper timing.</p>
+  <p class="brand">FX Band Predictor v2.0 | Sharp money. Sharper timing.</p>
   <p>Training: 2003–2025 | Val: 2025 (252 trading days) | Test: Jan–Feb 2026 (30 trading days, never seen)</p>
   <p>Models: XGBoost (45 features) + LSTM v2 BoundaryAwareLoss (12 features, 30-day sequences)</p>
   <p style="color:var(--gold);margin-top:0.5rem;font-weight:500;">{key_finding}</p>

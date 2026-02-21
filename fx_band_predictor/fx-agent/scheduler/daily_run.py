@@ -107,12 +107,12 @@ def save_to_s3(prediction: dict, run_date: datetime) -> str:
         date_key = run_date.strftime("predictions/%Y/%m/%d/prediction.json")
         s3.put_object(Bucket=S3_BUCKET, Key=date_key, Body=body,
                       ContentType="application/json",
-                      Metadata={"source": "baniya-buddhi-v1"})
+                      Metadata={"source": "fx-band-predictor-v1"})
 
         # Latest key
         s3.put_object(Bucket=S3_BUCKET, Key="predictions/latest.json", Body=body,
                       ContentType="application/json",
-                      Metadata={"source": "baniya-buddhi-v1"})
+                      Metadata={"source": "fx-band-predictor-v1"})
 
         print(f"  [s3] Saved to {date_key}")
         print(f"  [s3] Updated predictions/latest.json")
@@ -230,7 +230,7 @@ def print_formatted_summary(prediction: dict, run_date: datetime,
 
     print()
     print(bar)
-    print(f"BANIYA BUDDHI \u2014 {date_str}")
+    print(f"FX BAND PREDICTOR \u2014 {date_str}")
     print(bar)
     print(f"Status:          SUCCESS")
     print(f"Current Rate:    {current_rate:.2f} USD/INR")
@@ -306,7 +306,7 @@ def print_formatted_summary(prediction: dict, run_date: datetime,
     reasoning = prediction.get("reasoning", {})
     if reasoning.get("generated"):
         print()
-        print("BANIYA BUDDHI — OPUS ANALYSIS:")
+        print("FX BAND PREDICTOR — OPUS ANALYSIS:")
         print("\u2500" * 60)
         print(reasoning["analysis"])
         print("\u2500" * 60)
@@ -346,7 +346,7 @@ def print_weekly_forecast(weekly: dict) -> None:
     bar = "\u2500" * 52  # ─
 
     print()
-    print("BANIYA BUDDHI — WEEKLY FORECAST")
+    print("FX BAND PREDICTOR — WEEKLY FORECAST")
     print(bar)
 
     for day in forecasts:
@@ -427,7 +427,7 @@ def run_pipeline() -> int:
 
     print()
     print("=" * 60)
-    print("  BANIYA BUDDHI — FX Intelligence Engine")
+    print("  FX BAND PREDICTOR — FX Intelligence Engine")
     print("  $9.5M daily | ₹86.3 crore at stake")
     print("  Powered by 5 AI models across 2 time scales")
     print("=" * 60)

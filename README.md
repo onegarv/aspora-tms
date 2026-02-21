@@ -8,7 +8,7 @@ An event-driven, multi-agent treasury management platform that automates FX deal
 
 ```
 ┌─────────────────┐  ┌──────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐
-│  Liquidity Agent │  │  FX Analyst Agent │  │  Operations Agent   │  │  Baniya Buddhi       │
+│  Liquidity Agent │  │  FX Analyst Agent │  │  Operations Agent   │  │  FX Band Predictor       │
 │  (forecast/RDA) │  │  (deals/exposure) │  │  (fund movements)   │  │  (FX rate prediction)│
 └────────┬────────┘  └────────┬──────────┘  └──────────┬──────────┘  └──────────┬──────────┘
          │                    │                         │                        │
@@ -32,7 +32,7 @@ An event-driven, multi-agent treasury management platform that automates FX deal
 | **Operations Agent** | `feature/operations/...` | Fund movement proposals, maker-checker, window alerts, holiday lookahead |
 | **Liquidity Agent** | `feature/liquidity-agent/...` | Daily cash forecasting, RDA shortfall detection |
 | **FX Analyst Agent** | `feature/fx-analyst/...` | FX deal instructions, exposure management, reforecast triggers |
-| **Baniya Buddhi** | `integration/fx` | 48h USD/INR rate band prediction, 5-model ensemble, 7-day forecast |
+| **FX Band Predictor** | `integration/fx` | 48h USD/INR rate band prediction, 5-model ensemble, 7-day forecast |
 
 ### Event Bus (Redis Streams)
 
@@ -63,11 +63,11 @@ All inter-agent communication uses typed events defined in `bus/events.py`:
 
 ---
 
-## Baniya Buddhi — FX Rate Prediction Engine
+## FX Band Predictor — FX Rate Prediction Engine
 
 > *Hackathon-winning integration by the FX Intelligence team.*
 
-**Baniya Buddhi** ("merchant's intelligence") is a 5-model ensemble that predicts the 48-hour USD/INR rate band so treasury knows exactly how much INR to keep ready. Built for $9.5M daily volume (₹86.3 crore at stake), trained on 22 years of market data.
+**FX Band Predictor** ("merchant's intelligence") is a 5-model ensemble that predicts the 48-hour USD/INR rate band so treasury knows exactly how much INR to keep ready. Built for $9.5M daily volume (₹86.3 crore at stake), trained on 22 years of market data.
 
 ### How it works
 
@@ -88,12 +88,12 @@ Direction is decided by sentiment + macro voting. If both agree, the system acts
 Everything is handled by a single command:
 
 ```bash
-cd baniya_buddhi/fx-agent
+cd fx_band_predictor/fx-agent
 pip install -r requirements.txt && pip install fredapi torch
 python run.py
 ```
 
-`run.py` fetches market data, trains any missing models, and starts the prediction API on **port 8001**. See `baniya_buddhi/README.md` for the full reference.
+`run.py` fetches market data, trains any missing models, and starts the prediction API on **port 8001**. See `fx_band_predictor/README.md` for the full reference.
 
 ### API endpoints (port 8001)
 
@@ -131,7 +131,7 @@ aspora-tms/
 │       ├── windows.py             # GET /api/v1/windows
 │       ├── holidays.py            # GET /api/v1/holidays
 │       └── events.py              # GET /api/v1/events (SSE stream)
-├── baniya_buddhi/                  # FX Rate Prediction Engine (hackathon winner)
+├── fx_band_predictor/                  # FX Rate Prediction Engine (hackathon winner)
 │   └── fx-agent/
 │       ├── run.py                 # Single entry point — train + serve (:8001)
 │       ├── agents/                # 5-model ensemble + sentiment + macro

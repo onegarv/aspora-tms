@@ -1,18 +1,10 @@
-# Baniya Buddhi — FX Intelligence Engine
+# FX Band Predictor — FX Intelligence Engine
 
 > Sharp money. Sharper timing.
 
 AI-powered USD/INR rate band prediction for institutional remittance operations. Predicts tomorrow's high and low so treasury knows exactly how much INR to keep ready.
 
 **$9.5M daily volume | ₹86.3 crore at stake | 5 models | 22 years of training data**
-
-## The name
-
-**"Baniya"** — the traditional Indian merchant class, known for generational financial instinct and sharp capital management.
-
-**"Buddhi"** — intelligence, wisdom in Hindi.
-
-Together: machine intelligence with the instincts of a seasoned money manager.
 
 ---
 
@@ -22,7 +14,7 @@ Built for a company that **receives USD and converts to INR** — the system pre
 
 ```
 ============================================================
-  BANIYA BUDDHI — FX Intelligence Engine
+  FX BAND PREDICTOR — FX Intelligence Engine
   $9.5M daily | ₹86.3 crore at stake
   Powered by 5 AI models across 2 time scales
 ============================================================
@@ -104,7 +96,7 @@ Both problems reduce to the same question:
 
 ### Our solution
 
-Baniya Buddhi predicts the **48-hour USD/INR price band** — the expected high and low — using a 5-model AI ensemble trained on 22 years of market data. The predicted band enables:
+FX Band Predictor predicts the **48-hour USD/INR price band** — the expected high and low — using a 5-model AI ensemble trained on 22 years of market data. The predicted band enables:
 
 | Capability | How the band helps | Example |
 |-----------|-------------------|---------|
@@ -157,7 +149,7 @@ ROI                                   = 48,000x
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────────┐
-│                          Baniya Buddhi                                         │
+│                          FX Band Predictor                                         │
 │                                                                               │
 │  ┌────────────┐ ┌────────────┐ ┌─────────────┐ ┌──────────┐ ┌────────────┐  │
 │  │  XGBoost   │ │   LSTM     │ │  Sentiment  │ │  Macro   │ │ Intraday   │  │
@@ -1032,7 +1024,7 @@ curl http://localhost:8001/health
 
 ```json
 {
-  "system": "Baniya Buddhi",
+  "system": "FX Band Predictor",
   "tagline": "Sharp money. Sharper timing.",
   "version": "1.0.0",
   "status": "operational",
@@ -1614,5 +1606,5 @@ python run.py
 
 ---
 
-*Baniya Buddhi v2.0 — Sharp money. Sharper timing.*
+*FX Band Predictor v2.0 — Sharp money. Sharper timing.*
 *Trained on 22 years. Validated blind. Built for ₹86.3 crore daily.*

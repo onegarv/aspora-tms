@@ -23,11 +23,11 @@ from data.fx_calendar import get_next_7_calendar_days, get_calendar_context, get
 from data.ndf_calculator import compute_ndf_features, generate_ndf_interpretation
 from data.intraday_features import build_intraday_features
 
-app = FastAPI(title="Baniya Buddhi — FX Intelligence Engine", version="1.0.0")
+app = FastAPI(title="FX Band Predictor — FX Intelligence Engine", version="1.0.0")
 
 # Branding metadata injected into every response
 SYSTEM_META = {
-    "system": "Baniya Buddhi",
+    "system": "FX Band Predictor",
     "tagline": "Sharp money. Sharper timing.",
     "version": "1.0.0",
 }
@@ -55,9 +55,9 @@ last_prediction_ts: str = "never"
 @app.on_event("startup")
 def startup():
     global agent
-    print("Loading Baniya Buddhi — FX Intelligence Engine...")
+    print("Loading FX Band Predictor — FX Intelligence Engine...")
     agent = FXPredictionAgent()
-    print("Baniya Buddhi ready. Sharp money. Sharper timing.\n")
+    print("FX Band Predictor ready. Sharp money. Sharper timing.\n")
 
 
 @app.middleware("http")

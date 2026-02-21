@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Baniya Buddhi — Unified Orchestrator
+FX Band Predictor — Unified Orchestrator
 
 Single entry point that handles the full lifecycle:
   1. Fetch market data (daily + full history + intraday)
@@ -319,7 +319,7 @@ def run_prediction():
 
     print()
     print("=" * 64)
-    print(f"  BANIYA BUDDHI — {datetime.now().strftime('%Y-%m-%d %H:%M IST')}")
+    print(f"  FX BAND PREDICTOR — {datetime.now().strftime('%Y-%m-%d %H:%M IST')}")
     print("=" * 64)
     print(f"  Current Rate:    {rate:.4f} USD/INR")
     print(f"  Direction:       {pred['direction']}")
@@ -364,7 +364,7 @@ def start_api():
     import uvicorn
 
     _banner("STEP 5: Starting API Server")
-    _log("Starting Baniya Buddhi API on http://0.0.0.0:8001")
+    _log("Starting FX Band Predictor API on http://0.0.0.0:8001")
     _log("Endpoints:")
     _log("  GET /health              — System status")
     _log("  GET /predict             — 48h prediction (cached 15 min)")
@@ -385,7 +385,7 @@ def start_api():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Baniya Buddhi — FX Intelligence Engine (Unified Orchestrator)",
+        description="FX Band Predictor — FX Intelligence Engine (Unified Orchestrator)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -410,7 +410,7 @@ Examples:
 
     print()
     print("=" * 64)
-    print("  BANIYA BUDDHI — Sharp money. Sharper timing.")
+    print("  FX BAND PREDICTOR — Sharp money. Sharper timing.")
     print(f"  {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
     print("=" * 64)
 
