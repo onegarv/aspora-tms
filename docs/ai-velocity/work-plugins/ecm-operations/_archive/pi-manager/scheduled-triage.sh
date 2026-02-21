@@ -2,6 +2,7 @@
 # ECM Scheduled Triage - Posts daily briefing to Slack
 # Runs without MCP - uses cached/static data + Slack API
 
+source .env
 
 python3 << EOF
 import urllib.request
