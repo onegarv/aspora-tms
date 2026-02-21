@@ -340,8 +340,9 @@ class OperationsAgent(BaseAgent):
             idempotency_key    = idempotency_key,
         )
         result = await self._mc.submit_proposal(proposal)
-        self._pending_proposals[proposal.id] = proposal
-        self._pending_intents.add(idempotency_key)
+        if result.get("status") != "rejected":
+            self._pending_proposals[proposal.id] = proposal
+            self._pending_intents.add(idempotency_key)
 
         await self.emit(
             FUND_MOVEMENT_STATUS,
@@ -529,8 +530,9 @@ class OperationsAgent(BaseAgent):
             idempotency_key    = idempotency_key,
         )
         result = await self._mc.submit_proposal(proposal)
-        self._pending_proposals[proposal.id] = proposal
-        self._pending_intents.add(idempotency_key)
+        if result.get("status") != "rejected":
+            self._pending_proposals[proposal.id] = proposal
+            self._pending_intents.add(idempotency_key)
 
         await self.emit(
             FUND_MOVEMENT_STATUS,
