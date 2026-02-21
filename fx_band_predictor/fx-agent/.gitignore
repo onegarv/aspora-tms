@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+models/saved/*.pkl
+models/saved/*.h5
+models/saved/*.keras
+data/market_data.csv
+data/features.csv
+.venv/
+venv/
