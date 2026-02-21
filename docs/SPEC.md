@@ -150,13 +150,15 @@ Execute and monitor all fund movements (operating account → nostro), enforce c
 | Config | Account mappings, cut-off times, approval thresholds |
 
 ### 4.3 Fund Movement Windows
-| Currency | Rail | Hours (local) | Equivalent IST | Holiday Calendar |
-|---|---|---|---|---|
-| USD | Fedwire | 9:00 AM – 6:00 PM ET | 7:30 PM – 4:30 AM IST (+1d) | US Federal Reserve |
-| GBP | CHAPS | 8:00 AM – 4:00 PM UK | 1:30 PM – 9:30 PM IST | Bank of England |
-| EUR | SEPA/TARGET2 | 7:00 AM – 6:00 PM CET | 11:30 AM – 10:30 PM IST | TARGET2 calendar |
-| AED | → USD conversion | Follows USD rail | Follows USD | UAE CB + US Fed |
-| INR (deal booking) | Bank treasury desk | 9:00 AM – 3:00 PM IST | — | RBI / NSE holidays |
+| Currency | Rail | Hours (local) | IST equivalent (winter) | IST equivalent (summer) | Holiday Calendar |
+|---|---|---|---|---|---|
+| USD | Fedwire | 9:00 AM – 6:00 PM ET | 7:30 PM – 4:30 AM (+1d) | 6:30 PM – 3:30 AM (+1d) | US Federal Reserve |
+| GBP | CHAPS | 8:00 AM – 4:00 PM UK | 1:30 PM – 9:30 PM | 12:30 PM – 8:30 PM | Bank of England |
+| EUR | SEPA/TARGET2 | 7:00 AM – 6:00 PM CET | 11:30 AM – 10:30 PM | 10:30 AM – 9:30 PM | TARGET2 calendar |
+| AED | → USD conversion | Follows USD rail | Follows USD | Follows USD | UAE CB + US Fed |
+| INR (deal booking) | Bank treasury desk | 9:00 AM – 3:00 PM IST | — | — | RBI / NSE holidays |
+
+> ⚠️ IST equivalents shift with US/UK/EU DST transitions (US: second Sunday of March & first Sunday of November; UK/EU: last Sunday of March & October). The values above are approximate references only. Code uses IANA `ZoneInfo` identifiers and is always correct. For exact IST times on any date call `WindowManager.get_window(currency).window_ist_summary(date)`. DST transition warnings are surfaced proactively in the `ops.holiday.lookahead` event payload under the `dst_transitions` key.
 
 ### 4.4 Decision Logic
 

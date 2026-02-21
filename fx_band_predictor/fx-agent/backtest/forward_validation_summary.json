@@ -1,0 +1,13 @@
+{
+  "total_days": 30,
+  "ensemble_directional": 0,
+  "ensemble_neutral": 30,
+  "ensemble_accuracy_pct": 0.0,
+  "macro_accuracy_pct": 0.0,
+  "gated_directional": 0,
+  "gated_accuracy_pct": 0.0,
+  "range_accuracy_pct": 80.0,
+  "avg_conf_correct": 0.0,
+  "avg_conf_incorrect": 0.0,
+  "calibration_gap": 0.0
+}
