@@ -209,7 +209,7 @@ class OperationsAgent(BaseAgent):
         Stores the forecast and emits a fresh nostro balance snapshot.
         """
         self.today_forecast = event.payload
-        await self._emit_nostro_balances()
+        await self._emit_nostro_balances(correlation_id=event.correlation_id)
         logger.info("daily forecast received, nostro snapshot refreshed")
 
     async def handle_shortfall(self, event: Event) -> None:
@@ -723,7 +723,7 @@ class OperationsAgent(BaseAgent):
 
         return transitions
 
-    async def _emit_nostro_balances(self) -> None:
+    async def _emit_nostro_balances(self, correlation_id: str | None = None) -> None:
         """Publish current available balance for each monitored currency."""
         balances: dict[str, str] = {}
         for ccy in self._monitored_currencies:
@@ -734,7 +734,8 @@ class OperationsAgent(BaseAgent):
                     "balance query failed",
                     extra={"currency": ccy, "error": str(exc)},
                 )
-        await self.emit(NOSTRO_BALANCE_UPDATE, payload={"balances": balances})
+        await self.emit(NOSTRO_BALANCE_UPDATE, payload={"balances": balances},
+                        correlation_id=correlation_id)
 
     async def _check_stale_proposals(self, now_utc: datetime) -> None:
         """Emit stale-review alert for proposals pending longer than stale_proposal_age_min."""
