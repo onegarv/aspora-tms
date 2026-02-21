@@ -307,14 +307,34 @@ class OperationsAgent(BaseAgent):
             )
             return
 
-        # Step 6: submit proposal
+        # Step 6: resolve rail — raises ValueError for unsupported currencies (e.g. EUR)
+        try:
+            rail = self._windows.get_rail(ccy)
+        except (ValueError, KeyError) as exc:
+            logger.error(
+                "no transfer rail configured for currency — cannot route shortfall",
+                extra={"currency": ccy, "error": str(exc)},
+            )
+            await self.emit(
+                FUND_MOVEMENT_STATUS,
+                payload={
+                    "currency": ccy,
+                    "amount":   str(transfer_amount),
+                    "status":   "window_not_feasible",
+                    "reason":   f"No transfer rail configured for {ccy}",
+                },
+                correlation_id=event.correlation_id,
+            )
+            return
+
+        # Step 7: submit proposal
         proposal = FundMovementProposal(
             id                 = str(uuid.uuid4()),
             currency           = ccy,
             amount             = transfer_amount,
             source_account     = self._fm.get_operating_account(ccy),
             destination_nostro = self._fm.get_nostro_account(ccy),
-            rail               = self._windows.get_rail(ccy),
+            rail               = rail,
             proposed_by        = "system:operations_agent",
             purpose            = f"RDA shortfall cover {today_str}",
             idempotency_key    = idempotency_key,
