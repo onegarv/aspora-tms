@@ -73,6 +73,10 @@ WINDOW_CLOSING       = "ops.window.closing"
 HOLIDAY_LOOKAHEAD    = "ops.holiday.lookahead"
 TRANSFER_CONFIRMED   = "ops.transfer.confirmed"
 
+# ClearBank payment events
+CLEARBANK_DISPATCHED = "clearbank.payment.dispatched"
+CLEARBANK_FAILED     = "clearbank.payment.failed"
+
 # All known event types — used to enumerate streams
 ALL_EVENT_TYPES: list[str] = [
     FORECAST_READY,
@@ -88,4 +92,6 @@ ALL_EVENT_TYPES: list[str] = [
     WINDOW_CLOSING,
     HOLIDAY_LOOKAHEAD,
     TRANSFER_CONFIRMED,
+    CLEARBANK_DISPATCHED,
+    CLEARBANK_FAILED,
 ]
