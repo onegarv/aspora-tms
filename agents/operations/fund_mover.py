@@ -435,7 +435,7 @@ class FundMover:
         execution = self._store.get_by_proposal_id(proposal.id)
         if execution is None:
             rail   = self._resolve_rail(proposal)
-            amount = Decimal(str(proposal.amount)).quantize(
+            amount = proposal.amount.quantize(
                 Decimal("0.01"), rounding=ROUND_HALF_UP
             )
             execution = TransferExecution(
@@ -584,7 +584,7 @@ class FundMover:
             return "chaps"
 
         if currency == "EUR":
-            amount = Decimal(str(proposal.amount))
+            amount = proposal.amount
             if amount < self._cfg.sepa_instant_threshold:
                 return "sepa_instant"
             return "sepa"

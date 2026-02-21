@@ -311,7 +311,7 @@ class OperationsAgent(BaseAgent):
         proposal = FundMovementProposal(
             id                 = str(uuid.uuid4()),
             currency           = ccy,
-            amount             = float(transfer_amount),   # domain model uses float
+            amount             = transfer_amount,
             source_account     = self._fm.get_operating_account(ccy),
             destination_nostro = self._fm.get_nostro_account(ccy),
             rail               = self._windows.get_rail(ccy),
@@ -500,7 +500,7 @@ class OperationsAgent(BaseAgent):
         proposal = FundMovementProposal(
             id                 = str(uuid.uuid4()),
             currency           = ccy,
-            amount             = float(topup_amount),
+            amount             = topup_amount,
             source_account     = self._fm.get_operating_account(ccy),
             destination_nostro = self._fm.get_nostro_account(ccy),
             rail               = self._windows.get_rail(ccy),

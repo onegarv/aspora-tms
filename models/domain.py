@@ -8,7 +8,8 @@ ORM / DB models live in models/db.py.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import datetime, date, timezone
+from decimal import Decimal
 from enum import Enum
 from typing import Optional
 
@@ -16,14 +17,19 @@ from typing import Optional
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
 class ProposalStatus(str, Enum):
-    PENDING          = "pending"
-    PENDING_APPROVAL = "pending_approval"
-    APPROVED         = "approved"
-    REJECTED         = "rejected"
-    EXECUTED         = "executed"
-    CONFIRMED        = "confirmed"
-    FAILED           = "failed"
-    CANCELLED        = "cancelled"
+    PENDING                = "pending"
+    PENDING_APPROVAL       = "pending_approval"
+    APPROVED               = "approved"
+    REJECTED               = "rejected"
+    EXECUTED               = "executed"
+    CONFIRMED              = "confirmed"
+    FAILED                 = "failed"
+    CANCELLED              = "cancelled"
+    # Emitted by OperationsAgent when a proposal cannot proceed
+    WINDOW_NOT_FEASIBLE    = "window_not_feasible"
+    INSUFFICIENT_BALANCE   = "insufficient_balance"
+    MANUAL_REVIEW_REQUIRED = "manual_review_required"
+    STALE_REVIEW_NEEDED    = "stale_review_needed"
 
 
 class ShortfallSeverity(str, Enum):
@@ -47,7 +53,29 @@ class DailyForecast:
     confidence: ForecastConfidence
     currency_split: dict[str, float]         # {"USD": 45.2, "GBP": 12.1, ...}
     multipliers_applied: dict[str, float]    # {"payday": 1.4, "holiday": 1.0, ...}
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+    def to_event_payload(self) -> dict:
+        """Serialise to the dict published on the FORECAST_READY event."""
+        return {
+            "forecast_date":       self.forecast_date.isoformat(),
+            "total_inr_crores":    self.total_inr_crores,
+            "confidence":          self.confidence.value,
+            "currency_split":      self.currency_split,
+            "multipliers_applied": self.multipliers_applied,
+            "created_at":          self.created_at.isoformat(),
+        }
+
+    @classmethod
+    def from_event_payload(cls, payload: dict) -> "DailyForecast":
+        """Re-hydrate a DailyForecast from a FORECAST_READY event payload."""
+        return cls(
+            forecast_date=date.fromisoformat(payload["forecast_date"]),
+            total_inr_crores=payload["total_inr_crores"],
+            confidence=ForecastConfidence(payload["confidence"]),
+            currency_split=payload["currency_split"],
+            multipliers_applied=payload["multipliers_applied"],
+        )
 
 
 @dataclass
@@ -58,7 +86,7 @@ class RDAShortfall:
     available_balance: float
     shortfall: float
     severity: ShortfallSeverity
-    detected_at: datetime = field(default_factory=datetime.utcnow)
+    detected_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ── FX / Deal models ───────────────────────────────────────────────────────────
@@ -102,7 +130,7 @@ class FundMovementProposal:
     """
     id: str
     currency: str                        # ISO 4217 e.g. "USD"
-    amount: float                        # Amount in source currency
+    amount: Decimal                      # Amount in source currency
     source_account: str                  # Operating account ID
     destination_nostro: str              # Destination nostro account ID
     rail: str                            # "fedwire" | "chaps" | "target2" | "swift"
@@ -125,8 +153,8 @@ class FundMovementProposal:
     confirmed_at: Optional[datetime] = None
     expected_arrival: Optional[datetime] = None
 
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def requires_dual_approval(self) -> bool:

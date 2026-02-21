@@ -43,7 +43,7 @@ from agents.operations.fund_mover import (
 class _Proposal:
     id:                 str
     currency:           str
-    amount:             float
+    amount:             Decimal
     source_account:     str = "OPS-USD-001"
     destination_nostro: str = "NOSTRO-USD-001"
     rail:               str = "fedwire"
@@ -54,7 +54,7 @@ def _proposal(
     currency: str = "USD",
     amount: float = 1000.0,
 ) -> _Proposal:
-    return _Proposal(id=id, currency=currency, amount=amount)
+    return _Proposal(id=id, currency=currency, amount=Decimal(str(amount)))
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
