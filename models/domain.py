@@ -26,6 +26,7 @@ class ProposalStatus(str, Enum):
     FAILED                 = "failed"
     CANCELLED              = "cancelled"
     # Emitted by OperationsAgent when a proposal cannot proceed
+    DISPATCHED             = "dispatched"           # sent to ClearBank, awaiting settlement
     WINDOW_NOT_FEASIBLE    = "window_not_feasible"
     INSUFFICIENT_BALANCE   = "insufficient_balance"
     MANUAL_REVIEW_REQUIRED = "manual_review_required"

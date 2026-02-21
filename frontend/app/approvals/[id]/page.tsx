@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { use } from "react"
 import Decimal from "decimal.js"
-import { ArrowLeft, ArrowRight } from "lucide-react"
+import { ArrowLeft, ArrowRight, Zap } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -11,14 +11,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AuditTrail } from "@/components/AuditTrail"
 import { ApprovalModal } from "@/components/ApprovalModal"
+import { DispatchModal } from "@/components/DispatchModal"
 import { useProposal } from "@/hooks/useProposals"
 import type { ProposalStatus } from "@/lib/types"
 
 function statusVariant(status: ProposalStatus) {
   if (status === "PENDING_CHECKER" || status === "PENDING_MAKER")
     return "default" as const
-  if (status === "APPROVED") return "secondary" as const
-  if (status === "EXECUTED") return "outline" as const
+  if (status === "APPROVED" || status === "approved") return "secondary" as const
+  if (status === "EXECUTED" || status === "executed") return "outline" as const
+  if (status === "DISPATCHED" || status === "dispatched")
+    return "secondary" as const
   return "destructive" as const
 }
 
@@ -29,7 +32,8 @@ export default function ProposalDetailPage({
 }) {
   const { id } = use(params)
   const { data: proposal, isLoading } = useProposal(id)
-  const [modalAction, setModalAction] = useState<"approve" | "reject" | null>(null)
+  const [modalAction, setModalAction]   = useState<"approve" | "reject" | null>(null)
+  const [showDispatch, setShowDispatch] = useState(false)
 
   if (isLoading) {
     return (
@@ -48,7 +52,16 @@ export default function ProposalDetailPage({
     new Decimal(v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 
   const isPending =
-    proposal.status === "PENDING_CHECKER" || proposal.status === "PENDING_MAKER"
+    proposal.status === "PENDING_CHECKER" || proposal.status === "PENDING_MAKER" ||
+    proposal.status === "pending_approval"
+
+  const isApproved =
+    proposal.status === "APPROVED" || proposal.status === "approved"
+
+  const isDispatched =
+    proposal.status === "DISPATCHED" || proposal.status === "dispatched"
+
+  const isGbp = proposal.currency === "GBP"
 
   return (
     <div className="space-y-6">
@@ -111,6 +124,14 @@ export default function ProposalDetailPage({
                 <p className="text-xs italic">&quot;{proposal.notes}&quot;</p>
               </div>
             )}
+            {(isDispatched || proposal.settlement_ref) && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">ClearBank Payment ID</span>
+                <span className="font-mono text-xs text-green-600 dark:text-green-400">
+                  {proposal.settlement_ref}
+                </span>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -126,21 +147,49 @@ export default function ProposalDetailPage({
       </div>
 
       {/* Action buttons */}
-      {isPending && (
-        <div className="flex gap-3">
-          <Button onClick={() => setModalAction("approve")}>
-            Approve
+      <div className="flex flex-wrap gap-3">
+        {isPending && (
+          <>
+            <Button onClick={() => setModalAction("approve")}>Approve</Button>
+            <Button variant="destructive" onClick={() => setModalAction("reject")}>
+              Reject
+            </Button>
+          </>
+        )}
+
+        {isApproved && isGbp && (
+          <Button
+            variant="outline"
+            className="border-orange-400 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+            onClick={() => setShowDispatch(true)}
+          >
+            <Zap className="mr-1.5 size-4" />
+            Dispatch to ClearBank
           </Button>
-          <Button variant="destructive" onClick={() => setModalAction("reject")}>
-            Reject
-          </Button>
-        </div>
-      )}
+        )}
+
+        {isApproved && !isGbp && (
+          <p className="text-xs text-muted-foreground self-center">
+            ClearBank dispatch is only available for GBP proposals.
+          </p>
+        )}
+
+        {isDispatched && (
+          <Badge className="self-center bg-green-600 text-white text-xs px-3 py-1">
+            Dispatched to ClearBank
+          </Badge>
+        )}
+      </div>
 
       <ApprovalModal
         proposal={proposal}
         action={modalAction}
         onClose={() => setModalAction(null)}
+      />
+
+      <DispatchModal
+        proposal={showDispatch ? proposal : null}
+        onClose={() => setShowDispatch(false)}
       />
     </div>
   )

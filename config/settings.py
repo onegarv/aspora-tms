@@ -80,5 +80,29 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
 
+    # ── ClearBank integration ─────────────────────────────────────────────
+    # Feature flag — off by default for safety. Set ASPORA_CLEARBANK_ENABLED=true to activate.
+    clearbank_enabled: bool = False
+    clearbank_kill_switch: bool = False                # emergency off — blocks all dispatches
+    clearbank_token: str = ""                          # Bearer token from ClearBank portal
+    clearbank_base_url: str = "https://institution-api-sim.clearbank.co.uk"  # sandbox URL
+    clearbank_private_key: str = ""                    # PKCS#8 Base64 RSA private key
+    clearbank_account_id: str = ""                     # ClearBank-assigned account IBAN
+    clearbank_source_account_id: str = ""              # Debtor account IBAN
+    clearbank_legal_name: str = "Aspora Financial"
+    clearbank_legal_address: str = "1 Treasury Square, London, EC2V 7ND"
+
+    # Guardrails (hackathon demo safety)
+    # Comma-separated allowed destination nostro IDs; empty = allow any registered nostro
+    clearbank_allowed_nostros_raw: str = ""
+    demo_max_dispatch_gbp: float = 500.0               # max single dispatch amount (GBP)
+    demo_max_dispatches_per_hour: int = 3              # rate limit: dispatches per rolling hour
+
+    @property
+    def clearbank_allowed_nostros(self) -> list[str]:
+        if not self.clearbank_allowed_nostros_raw.strip():
+            return []
+        return [n.strip() for n in self.clearbank_allowed_nostros_raw.split(",") if n.strip()]
+
 
 settings = Settings()
