@@ -235,10 +235,10 @@ class OperationsAgent(BaseAgent):
             logger.error("malformed shortfall payload", extra={"error": str(exc)})
             return
 
-        # Step 2: transfer with buffer
-        transfer_amount = (shortfall_amount * (1 + self._prefunding_buffer)).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        # Step 2: shortfall from RDAChecker already includes the prefunding buffer
+        # (required_amount = forecast * (1 + buffer_pct) → shortfall is buffer-inclusive)
+        # Do NOT apply the buffer again — that would result in 1.10 × 1.10 = 1.21× coverage.
+        transfer_amount = shortfall_amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         now_utc  = datetime.now(timezone.utc)
         deadline = _tomorrow_9am_ist(now_utc)

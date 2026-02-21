@@ -183,8 +183,8 @@ async def test_handle_shortfall_submits_proposal():
     assert len(mc.submitted) == 1
     proposal = mc.submitted[0]
     assert proposal.currency == "USD"
-    # transfer = 10_000 × 1.10 = 11_000.00
-    assert abs(proposal.amount - Decimal("11000")) < Decimal("0.01")
+    # transfer = shortfall exactly (RDAChecker already includes buffer — no double-buffer)
+    assert abs(proposal.amount - Decimal("10000")) < Decimal("0.01")
 
     # FUND_MOVEMENT_STATUS emitted with pending_approval
     status_events = bus.get_events(FUND_MOVEMENT_STATUS)
