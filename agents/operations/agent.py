@@ -460,8 +460,17 @@ class OperationsAgent(BaseAgent):
 
         Accumulates deal amounts per currency. When cumulative deals exceed
         `nostro_topup_trigger_pct × available_balance`, submits a top-up proposal.
+
+        HOLD direction: signals a pause in deal flow — not accumulated and does
+        not trigger top-up logic.
         """
         p   = event.payload
+        direction = (p.get("direction") or "").upper()
+        if direction == "HOLD":
+            logger.info("HOLD deal instruction received — skipping accumulation",
+                        extra={"payload_currency": p.get("currency")})
+            return
+
         # Support both flat `currency` and `currency_pair` ("USD/INR") formats
         ccy = p.get("currency") or (p.get("currency_pair", "/").split("/")[0])
         if not ccy:
