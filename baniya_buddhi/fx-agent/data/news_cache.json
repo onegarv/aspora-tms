@@ -1,0 +1,37 @@
+{
+  "date": "2026-02-20",
+  "articles": [
+    {
+      "title": "RBI holds rates steady at 6.25%, signals cautious approach",
+      "source": "Reuters",
+      "published_at": "2026-02-20T06:00:00Z",
+      "description": "Reserve Bank of India kept repo rate unchanged"
+    },
+    {
+      "title": "US Dollar weakens as Treasury yields fall",
+      "source": "Bloomberg",
+      "published_at": "2026-02-20T05:00:00Z",
+      "description": "DXY index dropped 0.4% on weak economic data"
+    },
+    {
+      "title": "India GDP growth forecast raised to 7.2% by IMF",
+      "source": "Economic Times",
+      "published_at": "2026-02-20T04:00:00Z",
+      "description": "Strong domestic consumption drives upgrade"
+    },
+    {
+      "title": "Crude oil prices surge on OPEC supply cuts",
+      "source": "CNBC",
+      "published_at": "2026-02-20T03:00:00Z",
+      "description": "Brent crude rose amid Middle East tensions"
+    },
+    {
+      "title": "FII flows turn positive for India equities",
+      "source": "Mint",
+      "published_at": "2026-02-20T02:00:00Z",
+      "description": "Foreign investors buy in Indian stocks this week"
+    }
+  ],
+  "cached_at": "2026-02-20T22:16:58.994038",
+  "article_count": 5
+}

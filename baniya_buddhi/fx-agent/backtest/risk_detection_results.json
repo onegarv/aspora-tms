@@ -1,0 +1,324 @@
+[
+  {
+    "date": "2026-01-02",
+    "result": "YELLOW",
+    "risk_level": "MILD",
+    "risk_score": 2,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions"
+    ],
+    "recommended_buffer_paise": 5
+  },
+  {
+    "date": "2026-01-05",
+    "result": "GREEN",
+    "risk_level": "MILD",
+    "risk_score": 2,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions"
+    ],
+    "recommended_buffer_paise": 5
+  },
+  {
+    "date": "2026-01-06",
+    "result": "YELLOW",
+    "risk_level": "MILD",
+    "risk_score": 2,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions"
+    ],
+    "recommended_buffer_paise": 5
+  },
+  {
+    "date": "2026-01-07",
+    "result": "RED",
+    "risk_level": "MILD",
+    "risk_score": 2,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions"
+    ],
+    "recommended_buffer_paise": 5
+  },
+  {
+    "date": "2026-01-08",
+    "result": "YELLOW",
+    "risk_level": "MILD",
+    "risk_score": 2,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions"
+    ],
+    "recommended_buffer_paise": 5
+  },
+  {
+    "date": "2026-01-09",
+    "result": "YELLOW",
+    "risk_level": "MILD",
+    "risk_score": 2,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions"
+    ],
+    "recommended_buffer_paise": 5
+  },
+  {
+    "date": "2026-01-12",
+    "result": "GREEN",
+    "risk_level": "ELEVATED",
+    "risk_score": 4,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions",
+      "Monday gap: 33 paise from Friday close \u2014 gap-fill risk"
+    ],
+    "recommended_buffer_paise": 12
+  },
+  {
+    "date": "2026-01-13",
+    "result": "GREEN",
+    "risk_level": "MILD",
+    "risk_score": 2,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions"
+    ],
+    "recommended_buffer_paise": 5
+  },
+  {
+    "date": "2026-01-14",
+    "result": "GREEN",
+    "risk_level": "ELEVATED",
+    "risk_score": 3,
+    "risk_factors": [
+      "Rate at 99.9th percentile of 22yr history \u2014 mean reversion risk is highest here"
+    ],
+    "recommended_buffer_paise": 12
+  },
+  {
+    "date": "2026-01-15",
+    "result": "YELLOW",
+    "risk_level": "MILD",
+    "risk_score": 2,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions"
+    ],
+    "recommended_buffer_paise": 5
+  },
+  {
+    "date": "2026-01-16",
+    "result": "RED",
+    "risk_level": "ELEVATED",
+    "risk_score": 3,
+    "risk_factors": [
+      "Rate at 99.9th percentile of 22yr history \u2014 mean reversion risk is highest here"
+    ],
+    "recommended_buffer_paise": 12
+  },
+  {
+    "date": "2026-01-20",
+    "result": "YELLOW",
+    "risk_level": "ELEVATED",
+    "risk_score": 3,
+    "risk_factors": [
+      "Rate at 99.9th percentile of 22yr history \u2014 mean reversion risk is highest here"
+    ],
+    "recommended_buffer_paise": 12
+  },
+  {
+    "date": "2026-01-21",
+    "result": "RED",
+    "risk_level": "ELEVATED",
+    "risk_score": 3,
+    "risk_factors": [
+      "Rate at 99.9th percentile of 22yr history \u2014 mean reversion risk is highest here"
+    ],
+    "recommended_buffer_paise": 12
+  },
+  {
+    "date": "2026-01-22",
+    "result": "GREEN",
+    "risk_level": "CRITICAL",
+    "risk_score": 8,
+    "risk_factors": [
+      "Rate at 99.9th percentile of 22yr history \u2014 mean reversion risk is highest here",
+      "5-day rate range is 1.18 INR \u2014 elevated directional pressure",
+      "Regime changed: range_bound \u2192 trending_up \u2014 model recalibrating",
+      "Rate is 1.5% from 30d MA \u2014 mean reversion force building"
+    ],
+    "recommended_buffer_paise": 45
+  },
+  {
+    "date": "2026-01-23",
+    "result": "GREEN",
+    "risk_level": "ELEVATED",
+    "risk_score": 3,
+    "risk_factors": [
+      "Rate at 99.9th percentile of 22yr history \u2014 mean reversion risk is highest here"
+    ],
+    "recommended_buffer_paise": 12
+  },
+  {
+    "date": "2026-01-27",
+    "result": "YELLOW",
+    "risk_level": "ELEVATED",
+    "risk_score": 3,
+    "risk_factors": [
+      "Rate at 99.9th percentile of 22yr history \u2014 mean reversion risk is highest here"
+    ],
+    "recommended_buffer_paise": 12
+  },
+  {
+    "date": "2026-01-28",
+    "result": "RED",
+    "risk_level": "HIGH",
+    "risk_score": 6,
+    "risk_factors": [
+      "Rate at 99.9th percentile of 22yr history \u2014 mean reversion risk is highest here",
+      "Negative momentum (-1/6) at all-time highs \u2014 reversal risk elevated"
+    ],
+    "recommended_buffer_paise": 25
+  },
+  {
+    "date": "2026-01-29",
+    "result": "RED",
+    "risk_level": "ELEVATED",
+    "risk_score": 4,
+    "risk_factors": [
+      "Rate at 99.9th percentile of 22yr history \u2014 mean reversion risk is highest here",
+      "Rate is 1.6% from 30d MA \u2014 mean reversion force building"
+    ],
+    "recommended_buffer_paise": 12
+  },
+  {
+    "date": "2026-01-30",
+    "result": "YELLOW",
+    "risk_level": "HIGH",
+    "risk_score": 6,
+    "risk_factors": [
+      "Rate at 99.9th percentile of 22yr history \u2014 mean reversion risk is highest here",
+      "Negative momentum (-1/6) at all-time highs \u2014 reversal risk elevated"
+    ],
+    "recommended_buffer_paise": 25
+  },
+  {
+    "date": "2026-02-02",
+    "result": "RED",
+    "risk_level": "HIGH",
+    "risk_score": 6,
+    "risk_factors": [
+      "Rate at 99.9th percentile of 22yr history \u2014 mean reversion risk is highest here",
+      "Negative momentum (-1/6) at all-time highs \u2014 reversal risk elevated"
+    ],
+    "recommended_buffer_paise": 25
+  },
+  {
+    "date": "2026-02-03",
+    "result": "GREEN",
+    "risk_level": "CRITICAL",
+    "risk_score": 11,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions",
+      "Negative momentum (-3/6) at all-time highs \u2014 reversal risk elevated",
+      "5-day rate range is 1.54 INR \u2014 regime shock in progress",
+      "Regime changed: trending_up \u2192 high_vol \u2014 model recalibrating"
+    ],
+    "recommended_buffer_paise": 45
+  },
+  {
+    "date": "2026-02-04",
+    "result": "YELLOW",
+    "risk_level": "CRITICAL",
+    "risk_score": 10,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions",
+      "Negative momentum (-1/6) at all-time highs \u2014 reversal risk elevated",
+      "5-day rate range is 1.54 INR \u2014 regime shock in progress",
+      "5-day vol is 1.9x 20-day vol \u2014 volatility picking up"
+    ],
+    "recommended_buffer_paise": 45
+  },
+  {
+    "date": "2026-02-05",
+    "result": "YELLOW",
+    "risk_level": "CRITICAL",
+    "risk_score": 10,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions",
+      "Negative momentum (-2/6) at all-time highs \u2014 reversal risk elevated",
+      "5-day rate range is 1.66 INR \u2014 regime shock in progress",
+      "5-day vol is 1.8x 20-day vol \u2014 volatility picking up"
+    ],
+    "recommended_buffer_paise": 45
+  },
+  {
+    "date": "2026-02-06",
+    "result": "RED",
+    "risk_level": "CRITICAL",
+    "risk_score": 10,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions",
+      "Negative momentum (-1/6) at all-time highs \u2014 reversal risk elevated",
+      "5-day rate range is 1.56 INR \u2014 regime shock in progress",
+      "5-day vol is 1.9x 20-day vol \u2014 volatility picking up"
+    ],
+    "recommended_buffer_paise": 45
+  },
+  {
+    "date": "2026-02-09",
+    "result": "GREEN",
+    "risk_level": "ELEVATED",
+    "risk_score": 4,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions",
+      "Regime changed: high_vol \u2192 range_bound \u2014 model recalibrating"
+    ],
+    "recommended_buffer_paise": 12
+  },
+  {
+    "date": "2026-02-10",
+    "result": "GREEN",
+    "risk_level": "MILD",
+    "risk_score": 2,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions"
+    ],
+    "recommended_buffer_paise": 5
+  },
+  {
+    "date": "2026-02-11",
+    "result": "GREEN",
+    "risk_level": "MILD",
+    "risk_score": 2,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions"
+    ],
+    "recommended_buffer_paise": 5
+  },
+  {
+    "date": "2026-02-12",
+    "result": "GREEN",
+    "risk_level": "MILD",
+    "risk_score": 2,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions"
+    ],
+    "recommended_buffer_paise": 5
+  },
+  {
+    "date": "2026-02-13",
+    "result": "GREEN",
+    "risk_level": "MILD",
+    "risk_score": 2,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions"
+    ],
+    "recommended_buffer_paise": 5
+  },
+  {
+    "date": "2026-02-17",
+    "result": "GREEN",
+    "risk_level": "ELEVATED",
+    "risk_score": 4,
+    "risk_factors": [
+      "Rate at 99.5th+ percentile \u2014 limited historical precedent for predictions",
+      "Regime changed: range_bound \u2192 trending_down \u2014 model recalibrating"
+    ],
+    "recommended_buffer_paise": 12
+  }
+]

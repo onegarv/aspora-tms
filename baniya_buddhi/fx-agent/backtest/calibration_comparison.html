@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baniya Buddhi — Range Prediction Improvement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-dark: #0A1628;
+  --bg-card: #111827;
+  --bg-surface: #1F2937;
+  --gold: #F0B429;
+  --gold-dim: #C49A1C;
+  --text: #E5E7EB;
+  --text-dim: #9CA3AF;
+  --green: #22C55E;
+  --green-light: #86EFAC;
+  --yellow: #EAB308;
+  --red: #EF4444;
+  --red-light: #FCA5A5;
+  --orange: #F97316;
+  --border: #374151;
+  --bg-green: #0A2E1A;
+  --bg-yellow: #2E2A0A;
+  --bg-red: #2E0A0A;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* ---- HEADER ---- */
+.header {
+  background: linear-gradient(135deg, var(--bg-dark) 0%, #0F1D32 100%);
+  padding: 3rem 2rem;
+  text-align: center;
+  border-bottom: 2px solid var(--gold);
+}
+.header h1 {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+}
+.header .subtitle {
+  font-size: 1.15rem;
+  color: var(--text-dim);
+  font-weight: 300;
+}
+.header .date-range {
+  font-size: 1rem;
+  color: var(--text);
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+/* ---- CONTAINER ---- */
+.container { max-width: 1300px; margin: 0 auto; padding: 2rem; }
+
+/* ---- SECTION TITLES ---- */
+.section-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--gold);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ---- SUMMARY CARDS ---- */
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1rem;
+  margin: 2rem 0;
+}
+@media (max-width: 1100px) {
+  .dashboard { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 600px) {
+  .dashboard { grid-template-columns: repeat(2, 1fr); }
+}
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.2rem;
+  text-align: center;
+}
+.stat-card .stat-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.6rem;
+}
+.stat-card .stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+.stat-card .v-label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  width: 22px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.stat-card .v-value {
+  font-size: 1.05rem;
+  font-weight: 600;
+  min-width: 80px;
+  text-align: left;
+}
+.stat-card .stat-arrow {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0.3rem 0 0.1rem;
+}
+.stat-card .stat-big {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-top: 0.2rem;
+}
+.stat-card .stat-sub {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: 0.2rem;
+}
+
+/* ---- TABLES ---- */
+.table-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+thead th {
+  background: var(--bg-surface);
+  color: var(--gold);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  padding: 0.75rem 0.6rem;
+  text-align: center;
+  border-bottom: 2px solid var(--gold-dim);
+  white-space: nowrap;
+}
+tbody td {
+  padding: 0.55rem 0.6rem;
+  text-align: center;
+  border-bottom: 1px solid #1F2937;
+  white-space: nowrap;
+}
+tbody tr:hover { background: rgba(240, 180, 41, 0.04); }
+tbody tr:nth-child(even) { background: rgba(255,255,255,0.015); }
+tbody tr:nth-child(even):hover { background: rgba(240, 180, 41, 0.04); }
+
+/* Result cells */
+.cell-green {
+  background: var(--bg-green);
+  color: var(--green);
+  font-weight: 600;
+  border-radius: 4px;
+}
+.cell-yellow {
+  background: var(--bg-yellow);
+  color: var(--yellow);
+  font-weight: 600;
+  border-radius: 4px;
+}
+.cell-red {
+  background: var(--bg-red);
+  color: var(--red);
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+/* Change column */
+.change-better2 { color: #22C55E; font-weight: 700; }
+.change-better { color: #86EFAC; font-weight: 600; }
+.change-same { color: #6B7280; }
+.change-worse { color: #FCA5A5; font-weight: 600; }
+.change-worse2 { color: #EF4444; font-weight: 700; }
+
+/* Risk column */
+.risk-critical { color: var(--red); font-weight: 700; }
+.risk-high { color: var(--orange); font-weight: 600; }
+.risk-elevated { color: var(--yellow); font-weight: 500; }
+.risk-mild { color: var(--text-dim); }
+
+/* ---- REGIME TABLE ---- */
+.regime-table th:first-child,
+.regime-table td:first-child { text-align: left; }
+.regime-table .regime-name {
+  font-weight: 600;
+  color: var(--text);
+  text-transform: capitalize;
+}
+.regime-table .delta-positive { color: var(--green); font-weight: 600; }
+.regime-table .delta-neutral { color: var(--text-dim); }
+
+/* ---- RISK CORRELATION ---- */
+.risk-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+}
+.risk-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #1F2937;
+}
+.risk-item:last-child { border-bottom: none; }
+.risk-bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.35rem;
+}
+.risk-stat {
+  font-size: 0.95rem;
+}
+.risk-stat strong {
+  color: var(--gold);
+}
+.risk-stat .pct {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+/* ---- FOOTER ---- */
+.footer {
+  margin-top: 3rem;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.8;
+}
+.footer .insight {
+  color: var(--gold);
+  font-weight: 500;
+  font-style: italic;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+</style>
+</head>
+<body>
+
+<!-- ========== HEADER ========== -->
+<div class="header">
+  <h1>Baniya Buddhi &mdash; Range Prediction Improvement</h1>
+  <div class="subtitle">LSTM v1 (HuberLoss) vs v2 (BoundaryAwareLoss)</div>
+  <div class="date-range">Validation: January 2 &mdash; February 20, 2026</div>
+</div>
+
+<div class="container">
+
+<!-- ========== SUMMARY CARDS ========== -->
+<h2 class="section-title">Performance Summary</h2>
+<div class="dashboard">
+
+  <!-- Card 1: GREEN Days -->
+  <div class="stat-card">
+    <div class="stat-label">GREEN Days</div>
+    <div class="stat-row">
+      <span class="v-label">v1</span>
+      <span class="v-value" style="color: var(--text-dim);">13/30 (43%)</span>
+    </div>
+    <div class="stat-arrow" style="color: var(--green);">&#8593;</div>
+    <div class="stat-row">
+      <span class="v-label">v2</span>
+      <span class="v-value" style="color: var(--green);">16/30 (53%)</span>
+    </div>
+    <div class="stat-sub">+3 days improved</div>
+  </div>
+
+  <!-- Card 2: RED Days -->
+  <div class="stat-card">
+    <div class="stat-label">RED Days</div>
+    <div class="stat-row">
+      <span class="v-label">v1</span>
+      <span class="v-value" style="color: var(--text-dim);">7/30 (23%)</span>
+    </div>
+    <div class="stat-arrow" style="color: var(--green);">&#8595;</div>
+    <div class="stat-row">
+      <span class="v-label">v2</span>
+      <span class="v-value" style="color: var(--green);">5/30 (17%)</span>
+    </div>
+    <div class="stat-sub">-2 days reduced</div>
+  </div>
+
+  <!-- Card 3: Avg Overlap -->
+  <div class="stat-card">
+    <div class="stat-label">Avg Overlap</div>
+    <div class="stat-row">
+      <span class="v-label">v1</span>
+      <span class="v-value" style="color: var(--text-dim);">57.4%</span>
+    </div>
+    <div class="stat-arrow" style="color: var(--green);">&#8593;</div>
+    <div class="stat-row">
+      <span class="v-label">v2</span>
+      <span class="v-value" style="color: var(--green);">67.3%</span>
+    </div>
+    <div class="stat-sub">+9.9 pp gain</div>
+  </div>
+
+  <!-- Card 4: Position Error -->
+  <div class="stat-card">
+    <div class="stat-label">Avg Pred Range</div>
+    <div class="stat-row">
+      <span class="v-label">v1</span>
+      <span class="v-value" style="color: var(--text-dim);">49.1 paise</span>
+    </div>
+    <div class="stat-arrow" style="color: var(--yellow);">&#8593;</div>
+    <div class="stat-row">
+      <span class="v-label">v2</span>
+      <span class="v-value" style="color: var(--text);">58.7 paise</span>
+    </div>
+    <div class="stat-sub">Wider = better capture</div>
+  </div>
+
+  <!-- Card 5: Upgrades -->
+  <div class="stat-card">
+    <div class="stat-label">Upgrades</div>
+    <div class="stat-big" style="color: var(--green);">5</div>
+    <div class="stat-sub">days improved tier</div>
+  </div>
+
+  <!-- Card 6: Downgrades -->
+  <div class="stat-card">
+    <div class="stat-label">Downgrades</div>
+    <div class="stat-big" style="color: var(--green);">0</div>
+    <div class="stat-sub">days worsened tier</div>
+  </div>
+
+</div>
+
+<!-- ========== REGIME BREAKDOWN ========== -->
+<h2 class="section-title">Regime Breakdown</h2>
+<div class="table-section">
+<table class="regime-table">
+  <thead>
+    <tr>
+      <th style="text-align:left;">Regime</th>
+      <th>Days</th>
+      <th>v1 GREEN</th>
+      <th>v2 GREEN</th>
+      <th>&Delta; GREEN</th>
+      <th>v1 Overlap</th>
+      <th>v2 Overlap</th>
+      <th>&Delta; Overlap</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="regime-name" style="text-align:left;">Range Bound</td>
+      <td>18</td>
+      <td>9/18 (50%)</td>
+      <td style="color: var(--green); font-weight:600;">11/18 (61%)</td>
+      <td class="delta-positive">+11 pp</td>
+      <td>62.8%</td>
+      <td style="color: var(--green); font-weight:600;">72.7%</td>
+      <td class="delta-positive">+9.9 pp</td>
+    </tr>
+    <tr>
+      <td class="regime-name" style="text-align:left;">Trending Up</td>
+      <td>7</td>
+      <td>2/7 (29%)</td>
+      <td style="color: var(--green); font-weight:600;">3/7 (43%)</td>
+      <td class="delta-positive">+14 pp</td>
+      <td>42.0%</td>
+      <td style="color: var(--green); font-weight:600;">49.6%</td>
+      <td class="delta-positive">+7.6 pp</td>
+    </tr>
+    <tr>
+      <td class="regime-name" style="text-align:left;">Trending Down</td>
+      <td>1</td>
+      <td>1/1 (100%)</td>
+      <td style="color: var(--green); font-weight:600;">1/1 (100%)</td>
+      <td class="delta-neutral">0 pp</td>
+      <td>100.0%</td>
+      <td style="color: var(--green); font-weight:600;">100.0%</td>
+      <td class="delta-neutral">0 pp</td>
+    </tr>
+    <tr>
+      <td class="regime-name" style="text-align:left;">High Volatility</td>
+      <td>4</td>
+      <td>1/4 (25%)</td>
+      <td>1/4 (25%)</td>
+      <td class="delta-neutral">0 pp</td>
+      <td>49.4%</td>
+      <td style="color: var(--green); font-weight:600;">65.4%</td>
+      <td class="delta-positive">+16.0 pp</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ========== DAY-BY-DAY TABLE ========== -->
+<h2 class="section-title">Day-by-Day Comparison</h2>
+<div class="table-section">
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Entry</th>
+      <th>v1 Result</th>
+      <th>v1 Range</th>
+      <th>v1 Overlap</th>
+      <th>v2 Result</th>
+      <th>v2 Range</th>
+      <th>v2 Overlap</th>
+      <th>Actual Range</th>
+      <th>Regime</th>
+      <th>Risk</th>
+      <th>Change</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Jan 02 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 02</td>
+      <td>89.962</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>89.705 &ndash; 90.198</td>
+      <td>84.7%</td>
+      <td class="cell-green">GREEN</td>
+      <td>89.718 &ndash; 90.296</td>
+      <td>100.0%</td>
+      <td>22.6p</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td class="change-better2">++</td>
+    </tr>
+    <!-- Jan 05 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 05</td>
+      <td>90.007</td>
+      <td class="cell-green">GREEN</td>
+      <td>89.752 &ndash; 90.242</td>
+      <td>100.0%</td>
+      <td class="cell-green">GREEN</td>
+      <td>89.764 &ndash; 90.344</td>
+      <td>100.0%</td>
+      <td>6.7p</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Jan 06 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 06</td>
+      <td>90.233</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>89.980 &ndash; 90.468</td>
+      <td>61.8%</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>89.990 &ndash; 90.571</td>
+      <td>58.3%</td>
+      <td>30.2p</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td class="change-worse">-</td>
+    </tr>
+    <!-- Jan 07 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 07</td>
+      <td>90.166</td>
+      <td class="cell-red">RED</td>
+      <td>89.914 &ndash; 90.401</td>
+      <td>0.0%</td>
+      <td class="cell-red">RED</td>
+      <td>89.924 &ndash; 90.505</td>
+      <td>0.0%</td>
+      <td>4.1p</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Jan 08 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 08</td>
+      <td>89.864</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>89.614 &ndash; 90.100</td>
+      <td>58.8%</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>89.623 &ndash; 90.203</td>
+      <td>90.0%</td>
+      <td>33.1p</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td class="change-better">+</td>
+    </tr>
+    <!-- Jan 09 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 09</td>
+      <td>89.905</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>89.656 &ndash; 90.141</td>
+      <td>7.8%</td>
+      <td class="cell-green">GREEN</td>
+      <td>89.664 &ndash; 90.244</td>
+      <td>100.0%</td>
+      <td>10.3p</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td class="change-better2">++</td>
+    </tr>
+    <!-- Jan 12 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 12</td>
+      <td>90.236</td>
+      <td class="cell-green">GREEN</td>
+      <td>89.992 &ndash; 90.472</td>
+      <td>100.0%</td>
+      <td class="cell-green">GREEN</td>
+      <td>89.995 &ndash; 90.575</td>
+      <td>100.0%</td>
+      <td>14.0p</td>
+      <td>range_bound</td>
+      <td class="risk-elevated">ELEVATED (4)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Jan 13 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 13</td>
+      <td>90.133</td>
+      <td class="cell-green">GREEN</td>
+      <td>89.890 &ndash; 90.369</td>
+      <td>100.0%</td>
+      <td class="cell-green">GREEN</td>
+      <td>89.892 &ndash; 90.472</td>
+      <td>100.0%</td>
+      <td>9.0p</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Jan 14 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 14</td>
+      <td>90.273</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.032 &ndash; 90.510</td>
+      <td>100.0%</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.033 &ndash; 90.613</td>
+      <td>100.0%</td>
+      <td>17.8p</td>
+      <td>range_bound</td>
+      <td class="risk-elevated">ELEVATED (3)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Jan 15 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 15</td>
+      <td>90.183</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>89.943 &ndash; 90.420</td>
+      <td>10.8%</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>89.943 &ndash; 90.524</td>
+      <td>29.8%</td>
+      <td>54.3p</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td class="change-better">+</td>
+    </tr>
+    <!-- Jan 16 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 16</td>
+      <td>90.362</td>
+      <td class="cell-red">RED</td>
+      <td>90.122 &ndash; 90.599</td>
+      <td>0.0%</td>
+      <td class="cell-red">RED</td>
+      <td>90.122 &ndash; 90.702</td>
+      <td>0.0%</td>
+      <td>21.4p</td>
+      <td>range_bound</td>
+      <td class="risk-elevated">ELEVATED (3)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Jan 20 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 20</td>
+      <td>90.905</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>90.666 &ndash; 91.144</td>
+      <td>6.0%</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>90.664 &ndash; 91.247</td>
+      <td>30.6%</td>
+      <td>41.9p</td>
+      <td>range_bound</td>
+      <td class="risk-elevated">ELEVATED (3)</td>
+      <td class="change-better">+</td>
+    </tr>
+    <!-- Jan 21 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 21</td>
+      <td>91.118</td>
+      <td class="cell-red">RED</td>
+      <td>90.880 &ndash; 91.358</td>
+      <td>0.0%</td>
+      <td class="cell-red">RED</td>
+      <td>90.878 &ndash; 91.461</td>
+      <td>0.0%</td>
+      <td>2.1p</td>
+      <td>range_bound</td>
+      <td class="risk-elevated">ELEVATED (3)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Jan 22 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 22</td>
+      <td>91.537</td>
+      <td class="cell-green">GREEN</td>
+      <td>91.299 &ndash; 91.777</td>
+      <td>100.0%</td>
+      <td class="cell-green">GREEN</td>
+      <td>91.297 &ndash; 91.881</td>
+      <td>100.0%</td>
+      <td>15.5p</td>
+      <td>trending_up</td>
+      <td class="risk-critical">CRITICAL (8)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Jan 23 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 23</td>
+      <td>91.558</td>
+      <td class="cell-green">GREEN</td>
+      <td>91.320 &ndash; 91.800</td>
+      <td>100.0%</td>
+      <td class="cell-green">GREEN</td>
+      <td>91.318 &ndash; 91.903</td>
+      <td>100.0%</td>
+      <td>17.9p</td>
+      <td>trending_up</td>
+      <td class="risk-elevated">ELEVATED (3)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Jan 27 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 27</td>
+      <td>91.713</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>91.473 &ndash; 91.956</td>
+      <td>83.3%</td>
+      <td class="cell-green">GREEN</td>
+      <td>91.471 &ndash; 92.057</td>
+      <td>100.0%</td>
+      <td>50.7p</td>
+      <td>trending_up</td>
+      <td class="risk-elevated">ELEVATED (3)</td>
+      <td class="change-better2">++</td>
+    </tr>
+    <!-- Jan 28 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 28</td>
+      <td>91.534</td>
+      <td class="cell-red">RED</td>
+      <td>91.292 &ndash; 91.777</td>
+      <td>0.0%</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>91.291 &ndash; 91.878</td>
+      <td>36.9%</td>
+      <td>25.9p</td>
+      <td>trending_up</td>
+      <td class="risk-high">HIGH (6)</td>
+      <td class="change-better2">++</td>
+    </tr>
+    <!-- Jan 29 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 29</td>
+      <td>92.041</td>
+      <td class="cell-red">RED</td>
+      <td>91.797 &ndash; 92.284</td>
+      <td>0.0%</td>
+      <td class="cell-red">RED</td>
+      <td>91.796 &ndash; 92.384</td>
+      <td>0.0%</td>
+      <td>9.5p</td>
+      <td>trending_up</td>
+      <td class="risk-elevated">ELEVATED (4)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Jan 30 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Jan 30</td>
+      <td>91.782</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>91.536 &ndash; 92.025</td>
+      <td>10.5%</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>91.535 &ndash; 92.125</td>
+      <td>10.5%</td>
+      <td>144.1p</td>
+      <td>trending_up</td>
+      <td class="risk-high">HIGH (6)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Feb 02 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Feb 02</td>
+      <td>91.687</td>
+      <td class="cell-red">RED</td>
+      <td>91.434 &ndash; 91.929</td>
+      <td>0.0%</td>
+      <td class="cell-red">RED</td>
+      <td>91.436 &ndash; 92.029</td>
+      <td>0.0%</td>
+      <td>17.7p</td>
+      <td>trending_up</td>
+      <td class="risk-high">HIGH (6)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Feb 03 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Feb 03</td>
+      <td>90.246</td>
+      <td class="cell-green">GREEN</td>
+      <td>89.991 &ndash; 90.487</td>
+      <td>100.0%</td>
+      <td class="cell-green">GREEN</td>
+      <td>89.994 &ndash; 90.586</td>
+      <td>100.0%</td>
+      <td>29.8p</td>
+      <td>high_vol</td>
+      <td class="risk-critical">CRITICAL (11)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Feb 04 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Feb 04</td>
+      <td>90.423</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>90.166 &ndash; 90.664</td>
+      <td>78.6%</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>90.170 &ndash; 90.764</td>
+      <td>76.3%</td>
+      <td>19.0p</td>
+      <td>high_vol</td>
+      <td class="risk-critical">CRITICAL (10)</td>
+      <td class="change-worse">-</td>
+    </tr>
+    <!-- Feb 05 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Feb 05</td>
+      <td>90.125</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>89.867 &ndash; 90.367</td>
+      <td>19.0%</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>89.876 &ndash; 90.470</td>
+      <td>56.8%</td>
+      <td>27.3p</td>
+      <td>high_vol</td>
+      <td class="risk-critical">CRITICAL (10)</td>
+      <td class="change-better">+</td>
+    </tr>
+    <!-- Feb 06 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Feb 06</td>
+      <td>90.315</td>
+      <td class="cell-red">RED</td>
+      <td>90.056 &ndash; 90.556</td>
+      <td>0.0%</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>90.063 &ndash; 90.655</td>
+      <td>28.6%</td>
+      <td>23.5p</td>
+      <td>high_vol</td>
+      <td class="risk-critical">CRITICAL (10)</td>
+      <td class="change-better2">++</td>
+    </tr>
+    <!-- Feb 09 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Feb 09</td>
+      <td>90.588</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.323 &ndash; 90.830</td>
+      <td>100.0%</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.336 &ndash; 90.931</td>
+      <td>100.0%</td>
+      <td>23.5p</td>
+      <td>range_bound</td>
+      <td class="risk-elevated">ELEVATED (4)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Feb 10 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Feb 10</td>
+      <td>90.823</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.556 &ndash; 91.065</td>
+      <td>100.0%</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.571 &ndash; 91.167</td>
+      <td>100.0%</td>
+      <td>14.8p</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Feb 11 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Feb 11</td>
+      <td>90.588</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.321 &ndash; 90.830</td>
+      <td>100.0%</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.338 &ndash; 90.933</td>
+      <td>100.0%</td>
+      <td>17.2p</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Feb 12 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Feb 12</td>
+      <td>90.736</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.467 &ndash; 90.978</td>
+      <td>100.0%</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.486 &ndash; 91.081</td>
+      <td>100.0%</td>
+      <td>21.9p</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Feb 13 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Feb 13</td>
+      <td>90.564</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.295 &ndash; 90.807</td>
+      <td>100.0%</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.315 &ndash; 90.909</td>
+      <td>100.0%</td>
+      <td>15.7p</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td class="change-same">=</td>
+    </tr>
+    <!-- Feb 17 -->
+    <tr>
+      <td style="text-align:left; font-weight:500;">Feb 17</td>
+      <td>90.783</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.513 &ndash; 91.026</td>
+      <td>100.0%</td>
+      <td class="cell-green">GREEN</td>
+      <td>90.536 &ndash; 91.125</td>
+      <td>100.0%</td>
+      <td>16.7p</td>
+      <td>trending_down</td>
+      <td class="risk-elevated">ELEVATED (4)</td>
+      <td class="change-same">=</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ========== RISK CORRELATION ========== -->
+<h2 class="section-title">Risk Detection Correlation</h2>
+<div class="risk-section">
+
+  <div class="risk-item">
+    <div class="risk-bullet" style="background: var(--red);"></div>
+    <div class="risk-stat">
+      Of <strong>7 RED days</strong> (v1), <span class="pct" style="color: var(--yellow);">6 were flagged ELEVATED+</span> &mdash; <strong>86% detection rate</strong>
+    </div>
+  </div>
+
+  <div class="risk-item">
+    <div class="risk-bullet" style="background: var(--orange);"></div>
+    <div class="risk-stat">
+      Of <strong>7 RED days</strong> (v1), <span class="pct" style="color: var(--orange);">3 were flagged HIGH or CRITICAL</span> &mdash; <strong>43% strong-signal rate</strong>
+    </div>
+  </div>
+
+  <div class="risk-item">
+    <div class="risk-bullet" style="background: var(--gold);"></div>
+    <div class="risk-stat">
+      Average risk score by outcome &mdash;
+      <span style="color: var(--red); font-weight:600;">RED: 4.9</span> &nbsp;|&nbsp;
+      <span style="color: var(--yellow); font-weight:600;">YELLOW: 4.2</span> &nbsp;|&nbsp;
+      <span style="color: var(--green); font-weight:600;">GREEN: 3.8</span>
+    </div>
+  </div>
+
+  <div class="risk-item">
+    <div class="risk-bullet" style="background: var(--green);"></div>
+    <div class="risk-stat">
+      v2 converted <strong>5 BETTER days</strong> (Jan 02, Jan 09, Jan 27, Jan 28, Feb 06) &mdash; <span class="pct" style="color: var(--green);">0 regressions</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== UPGRADE DETAIL ========== -->
+<h2 class="section-title">Upgrade Details &mdash; 5 Days Improved</h2>
+<div class="table-section">
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>v1 Result</th>
+      <th>v2 Result</th>
+      <th>v1 Overlap</th>
+      <th>v2 Overlap</th>
+      <th>Regime</th>
+      <th>Risk</th>
+      <th>What Changed</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="font-weight:600;">Jan 02</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td class="cell-green">GREEN</td>
+      <td>84.7%</td>
+      <td style="color:var(--green); font-weight:600;">100.0%</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td style="text-align:left; color:var(--green-light);">Wider upper bound captured actual high</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600;">Jan 09</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td class="cell-green">GREEN</td>
+      <td>7.8%</td>
+      <td style="color:var(--green); font-weight:600;">100.0%</td>
+      <td>range_bound</td>
+      <td class="risk-mild">MILD (2)</td>
+      <td style="text-align:left; color:var(--green-light);">Asymmetric buffer extended upper range</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600;">Jan 27</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td class="cell-green">GREEN</td>
+      <td>83.3%</td>
+      <td style="color:var(--green); font-weight:600;">100.0%</td>
+      <td>trending_up</td>
+      <td class="risk-elevated">ELEVATED (3)</td>
+      <td style="text-align:left; color:var(--green-light);">P90 quantile captured trending move</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600;">Jan 28</td>
+      <td class="cell-red">RED</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>0.0%</td>
+      <td style="color:var(--yellow); font-weight:600;">36.9%</td>
+      <td>trending_up</td>
+      <td class="risk-high">HIGH (6)</td>
+      <td style="text-align:left; color:var(--green-light);">Rescued from RED &mdash; partial overlap now</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600;">Feb 06</td>
+      <td class="cell-red">RED</td>
+      <td class="cell-yellow">YELLOW</td>
+      <td>0.0%</td>
+      <td style="color:var(--yellow); font-weight:600;">28.6%</td>
+      <td>high_vol</td>
+      <td class="risk-critical">CRITICAL (10)</td>
+      <td style="text-align:left; color:var(--green-light);">Wider band caught edge of volatile move</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+</div><!-- /.container -->
+
+<!-- ========== FOOTER ========== -->
+<div class="footer">
+  Training: 2003 &ndash; 2024 &nbsp;|&nbsp; Validation: Jan &ndash; Feb 2026 &nbsp;|&nbsp;
+  v1: HuberLoss (symmetric) &nbsp;|&nbsp; v2: BoundaryAwareLoss (P90 + asymmetric buffer)
+  <div class="insight">
+    Key insight: Asymmetric upside buffer was the critical fix &mdash; all 5 upgrades came from better upper-bound capture.
+  </div>
+</div>
+
+</body>
+</html>

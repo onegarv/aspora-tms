@@ -1,0 +1,28 @@
+{
+  "date": "2026-02-21",
+  "cached_at": "2026-02-21T00:04:52.336490",
+  "sentiment": {
+    "sentiment_score": -0.1756,
+    "confidence": 0.4807,
+    "explanation": "Alpha Vantage: 4 relevant articles \u2014 USD strength signals suggest INR pressure",
+    "bullish_inr_signals": [],
+    "bearish_inr_signals": [
+      "[Financial Times] How low can the dollar go?",
+      "[Benzinga] Fed Admits Conducting 'Extremely Rare' Dollar-Yen 'Rate Check' On White House Re",
+      "[Benzinga] Eric Trump Says This Type Of Crypto Could 'Arguably' End Up Saving The Dollar: W",
+      "[CNBC] Trump family says U.S. dollar needs an upgrade, and they are the ones to do it"
+    ],
+    "high_impact_event_detected": false,
+    "event_type": null,
+    "event_description": null,
+    "data_quality": "limited",
+    "source": "alpha_vantage",
+    "article_count": 4,
+    "raw_usd_score": 0.1756,
+    "_token_usage": {
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0.0
+    }
+  }
+}
