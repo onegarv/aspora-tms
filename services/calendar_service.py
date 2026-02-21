@@ -491,3 +491,65 @@ class CalendarService:
     def audit_log(self) -> list[_AuditEntry]:
         """Return the full audit trail of Layer 3 operations."""
         return list(self._audit)
+
+    # ── DST transition detection ───────────────────────────────────────────────
+
+    # Jurisdictions that observe DST and their IANA timezone identifiers.
+    # IN and AE intentionally omitted — neither observes DST.
+    DST_JURISDICTIONS: dict[str, str] = {
+        "US": "America/New_York",
+        "UK": "Europe/London",
+        "EU": "Europe/Berlin",
+    }
+
+    def get_dst_transitions(self, start: date, end: date) -> list[dict]:
+        """
+        Return all DST transitions across tracked jurisdictions between
+        `start` and `end` dates (inclusive).
+
+        These are NOT bank holidays — payment rails are open. But the
+        IST-equivalent window open/close times shift by the transition
+        amount, which is an operational risk for anyone who has memorised
+        those times.
+
+        Returns a list of dicts with keys:
+            date, jurisdiction, timezone, direction ("spring_forward" |
+            "fall_back"), shift_minutes, new_utc_offset_hours,
+            is_holiday (always False), operational_note
+        """
+        transitions: list[dict] = []
+
+        for jurisdiction, tz_name in self.DST_JURISDICTIONS.items():
+            tz = ZoneInfo(tz_name)
+            current = start
+
+            while current <= end:
+                dt_noon      = datetime(current.year, current.month, current.day, 12, 0, tzinfo=tz)
+                dt_noon_next = dt_noon + timedelta(days=1)
+
+                offset_today = dt_noon.utcoffset()
+                offset_next  = dt_noon_next.utcoffset()
+
+                if offset_today != offset_next:
+                    shift_min = int((offset_next - offset_today).total_seconds() / 60)  # type: ignore[operator]
+                    direction = "spring_forward" if shift_min > 0 else "fall_back"
+                    transitions.append({
+                        "date":                  current.isoformat(),
+                        "jurisdiction":          jurisdiction,
+                        "timezone":              tz_name,
+                        "direction":             direction,
+                        "shift_minutes":         abs(shift_min),
+                        "new_utc_offset_hours":  offset_next.total_seconds() / 3600,  # type: ignore[union-attr]
+                        "type":                  "dst_transition",
+                        "is_holiday":            False,
+                        "operational_note": (
+                            f"{jurisdiction} clocks "
+                            f"{'advance' if shift_min > 0 else 'go back'} "
+                            f"{abs(shift_min)} min. "
+                            f"Transfer window IST equivalents shift."
+                        ),
+                    })
+
+                current += timedelta(days=1)
+
+        return transitions

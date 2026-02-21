@@ -1,0 +1,45 @@
+{
+  "overall": {
+    "total_days": 90,
+    "total_signals": 55,
+    "high_confidence_signals": 20,
+    "signals_acted_on": 19
+  },
+  "accuracy": {
+    "overall_directional_pct": 18.2,
+    "high_confidence_pct": 20.0,
+    "range_accuracy_pct": 67.8,
+    "avg_confidence_correct": 0.498,
+    "avg_confidence_incorrect": 0.452,
+    "calibration_gap": 0.046
+  },
+  "financial": {
+    "avg_improvement_paise": 35.8,
+    "best_gain_paise": 69.3,
+    "worst_loss_paise": -63.2,
+    "saving_per_100k": 35800,
+    "saving_per_1m": 358000,
+    "annual_saving_1m": 4296000
+  },
+  "signal_quality": {
+    "strong_count": 3,
+    "strong_acc": 33.3,
+    "medium_count": 17,
+    "medium_acc": 17.6,
+    "weak_count": 35,
+    "weak_acc": 17.1
+  },
+  "safety_gate": {
+    "blocked_low_confidence": 33,
+    "blocked_no_consensus": 35,
+    "blocked_circuit_breaker": 2,
+    "blocked_high_volatility": 10
+  },
+  "strategy_comparison": {
+    "naive_avg_rate": 90.2463,
+    "agent_avg_rate": 90.2463,
+    "naive_trades": 90,
+    "agent_trades": 19,
+    "signals_per_month": 6.3
+  }
+}

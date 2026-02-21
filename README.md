@@ -7,21 +7,21 @@ An event-driven, multi-agent treasury management platform that automates FX deal
 ## Architecture Overview
 
 ```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────────┐
-│  Liquidity Agent │     │  FX Analyst Agent │     │  Operations Agent   │
-│  (forecast/RDA) │     │  (deals/exposure) │     │  (fund movements)   │
-└────────┬────────┘     └────────┬──────────┘     └──────────┬──────────┘
-         │                       │                            │
-         └───────────────────────┴────────────────────────────┘
-                                 │
-                    ┌────────────▼────────────┐
-                    │   Redis Streams Bus      │
-                    │   (tms:<event_type>)     │
-                    └────────────┬────────────┘
+┌─────────────────┐  ┌──────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐
+│  Liquidity Agent │  │  FX Analyst Agent │  │  Operations Agent   │  │  FX Band Predictor       │
+│  (forecast/RDA) │  │  (deals/exposure) │  │  (fund movements)   │  │  (FX rate prediction)│
+└────────┬────────┘  └────────┬──────────┘  └──────────┬──────────┘  └──────────┬──────────┘
+         │                    │                         │                        │
+         └────────────────────┴─────────────────────────┘                        │
+                                 │                                               │
+                    ┌────────────▼────────────┐                     ┌────────────▼────────────┐
+                    │   Redis Streams Bus      │                     │   FX Intelligence API    │
+                    │   (tms:<event_type>)     │                     │   :8001 /predict         │
+                    └────────────┬────────────┘                     └─────────────────────────┘
                                  │
                     ┌────────────▼────────────┐
                     │   FastAPI Dashboard API  │
-                    │   /api/v1/...            │
+                    │   :8000 /api/v1/...      │
                     └─────────────────────────┘
 ```
 
@@ -32,6 +32,7 @@ An event-driven, multi-agent treasury management platform that automates FX deal
 | **Operations Agent** | `feature/operations/...` | Fund movement proposals, maker-checker, window alerts, holiday lookahead |
 | **Liquidity Agent** | `feature/liquidity-agent/...` | Daily cash forecasting, RDA shortfall detection |
 | **FX Analyst Agent** | `feature/fx-analyst/...` | FX deal instructions, exposure management, reforecast triggers |
+| **FX Band Predictor** | `integration/fx` | 48h USD/INR rate band prediction, 5-model ensemble, 7-day forecast |
 
 ### Event Bus (Redis Streams)
 
@@ -62,6 +63,51 @@ All inter-agent communication uses typed events defined in `bus/events.py`:
 
 ---
 
+## FX Band Predictor — FX Rate Prediction Engine
+
+> *Hackathon-winning integration by the FX Intelligence team.*
+
+**FX Band Predictor** ("merchant's intelligence") is a 5-model ensemble that predicts the 48-hour USD/INR rate band so treasury knows exactly how much INR to keep ready. Built for $9.5M daily volume (₹86.3 crore at stake), trained on 22 years of market data.
+
+### How it works
+
+Five models vote on direction and range, then a safety gate decides whether to act:
+
+| Model | Role | What it does |
+|---|---|---|
+| **XGBoost Regime** | Context | Classifies market as trending_up / trending_down / high_vol / range_bound (99.3% accuracy) |
+| **LSTM Range** | Range provider | Predicts 48h high/low/close band using 30-day sequences (76% containment) |
+| **Sentiment** | Primary vote | News-driven direction signal via Alpha Vantage / NewsAPI |
+| **Macro Signal** | Secondary vote | Rule-based FRED fundamentals (Fed funds, yield curve, CPI) |
+| **Intraday LSTM** | Momentum check | 4h bar momentum confirmation (asymmetric UP-only, 74% UP accuracy) |
+
+Direction is decided by sentiment + macro voting. If both agree, the system acts. A 5-rule safety gate blocks ~65% of signals to keep the system conservative. When confidence exceeds 50%, Claude Opus 4.6 generates a CFO-ready reasoning brief.
+
+### Running it
+
+Everything is handled by a single command:
+
+```bash
+cd fx_band_predictor/fx-agent
+pip install -r requirements.txt && pip install fredapi torch
+python run.py
+```
+
+`run.py` fetches market data, trains any missing models, and starts the prediction API on **port 8001**. See `fx_band_predictor/README.md` for the full reference.
+
+### API endpoints (port 8001)
+
+| Endpoint | Description |
+|---|---|
+| `GET /predict` | 48h prediction with full model breakdown and AI reasoning |
+| `GET /predict/weekly` | 7-day calendar-aware forecast with best conversion day |
+| `GET /intraday` | 4h momentum signal with session breakdown |
+| `GET /health` | System status and uptime |
+| `GET /history?days=30` | Historical prediction accuracy |
+| `GET /backtest?days=90` | Walk-forward backtest results |
+
+---
+
 ## Project Structure
 
 ```
@@ -74,7 +120,7 @@ aspora-tms/
 │       ├── maker_checker.py       # MakerCheckerWorkflow — approval state machine
 │       └── window_manager.py      # WindowManager — cut-off times per rail
 ├── api/
-│   ├── app.py                     # FastAPI app factory
+│   ├── app.py                     # FastAPI app factory (:8000)
 │   ├── auth.py                    # JWT / RBAC middleware
 │   ├── schemas.py                 # Pydantic request/response models
 │   └── routers/
@@ -85,6 +131,14 @@ aspora-tms/
 │       ├── windows.py             # GET /api/v1/windows
 │       ├── holidays.py            # GET /api/v1/holidays
 │       └── events.py              # GET /api/v1/events (SSE stream)
+├── fx_band_predictor/                  # FX Rate Prediction Engine (hackathon winner)
+│   └── fx-agent/
+│       ├── run.py                 # Single entry point — train + serve (:8001)
+│       ├── agents/                # 5-model ensemble + sentiment + macro
+│       ├── api/main.py            # FastAPI prediction API (:8001)
+│       ├── data/                  # Market data fetchers + feature engineering
+│       ├── models/                # Training scripts + saved artifacts
+│       └── requirements.txt
 ├── bus/
 │   ├── events.py                  # Typed event constants + Event dataclass
 │   ├── base.py                    # EventBus ABC

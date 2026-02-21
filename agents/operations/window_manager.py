@@ -145,6 +145,45 @@ class TransferWindow:
         delta_sec = (close_dt - local).total_seconds()
         return max(0, int(delta_sec / 60))
 
+    # ── IST conversion helpers ─────────────────────────────────────────────
+    # Always compute dynamically — never hardcode IST equivalents, as they
+    # shift by 1 hour twice a year with US/UK/EU DST transitions.
+
+    def close_time_ist(self, for_date: date | None = None) -> time:
+        """
+        Return this rail's official close time converted to IST for the given date.
+        Accounts for DST in the source timezone automatically.
+        """
+        d = for_date or date.today()
+        close_dt = datetime.combine(d, self.official_close_time, tzinfo=self.timezone)
+        return close_dt.astimezone(TZ_IST).time()
+
+    def open_time_ist(self, for_date: date | None = None) -> time:
+        """
+        Return this rail's official open time converted to IST for the given date.
+        Accounts for DST in the source timezone automatically.
+        """
+        d = for_date or date.today()
+        open_dt = datetime.combine(d, self.official_open_time, tzinfo=self.timezone)
+        return open_dt.astimezone(TZ_IST).time()
+
+    def window_ist_summary(self, for_date: date | None = None) -> dict:
+        """
+        Full summary of this window in both local and IST times for the given date.
+        Use this for dashboard display and alert messages — never hardcode IST equivalents.
+        """
+        d = for_date or date.today()
+        return {
+            "currency":    self.currency,
+            "rail":        self.rail_name,
+            "local_open":  self.official_open_time.isoformat(),
+            "local_close": self.official_close_time.isoformat(),
+            "local_tz":    str(self.timezone),
+            "ist_open":    self.open_time_ist(d).isoformat(),
+            "ist_close":   self.close_time_ist(d).isoformat(),
+            "date":        d.isoformat(),
+        }
+
     def next_open(self, current_time: datetime) -> datetime:
         """
         Returns the next datetime when this window will open (in the rail's tz).
@@ -540,6 +579,58 @@ class WindowManager:
                 continue
             added += 1
         return result
+
+    # ── Live convenience methods ───────────────────────────────────────────
+    # These call the core methods with datetime.now(timezone.utc) so callers
+    # don't need to manage the clock themselves.  The core methods remain pure
+    # and fully testable; only use these wrappers in production runtime code.
+
+    def is_open_right_now(self, currency: str) -> bool:
+        """Is this currency's window open right now?"""
+        from datetime import timezone
+        return self.is_open_now(currency, datetime.now(timezone.utc))
+
+    def minutes_until_close_now(self, currency: str) -> int:
+        """Minutes until operational close, measured from right now."""
+        from datetime import timezone
+        return self.minutes_until_close(currency, datetime.now(timezone.utc))
+
+    def next_open_now(self, currency: str) -> datetime:
+        """Next datetime this currency's window will open, from right now."""
+        from datetime import timezone
+        return self.next_open(currency, datetime.now(timezone.utc))
+
+    def opens_before_now(self, currency: str, deadline: datetime) -> bool:
+        """Will this window open before `deadline`, checking from right now?"""
+        from datetime import timezone
+        return self.opens_before(currency, deadline, datetime.now(timezone.utc))
+
+    def can_complete_path_now(
+        self,
+        source_currency: str,
+        target_currency: str,
+        amount: float,
+        deadline: datetime,
+    ) -> bool:
+        """Can the full settlement path complete before `deadline`, from right now?"""
+        from datetime import timezone
+        return self.can_complete_path(
+            source_currency, target_currency, amount, deadline,
+            datetime.now(timezone.utc),
+        )
+
+    def next_path_execution_time_now(
+        self,
+        source_currency: str,
+        target_currency: str,
+        amount: float,
+    ) -> datetime:
+        """Earliest datetime the settlement path can execute, from right now."""
+        from datetime import timezone
+        return self.next_path_execution_time(
+            source_currency, target_currency, amount,
+            datetime.now(timezone.utc),
+        )
 
     # ── Internal ──────────────────────────────────────────────────────────
 

@@ -202,11 +202,18 @@ class LiquidityAgent(BaseAgent):
         """
         Operations Agent publishes NOSTRO_BALANCE_UPDATE after each
         balance refresh.  Payload may be {balances: {...}} or flat {...}.
+
+        NOTE: OpsAgent serialises Decimal balances as strings (e.g. "1000000").
+        We accept int, float, and str so the types always round-trip correctly.
         """
         payload_balances: dict = event.payload.get("balances", event.payload)
-        self._nostro_balances.update(
-            {k: float(v) for k, v in payload_balances.items() if isinstance(v, (int, float))}
-        )
+        updated: dict[str, float] = {}
+        for k, v in payload_balances.items():
+            try:
+                updated[k] = float(v)
+            except (TypeError, ValueError):
+                pass
+        self._nostro_balances.update(updated)
         self.logger.info(
             "Nostro balances updated: %s",
             {k: round(v, 0) for k, v in self._nostro_balances.items()},
