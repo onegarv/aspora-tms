@@ -63,7 +63,7 @@ logger = logging.getLogger("tms.agent.operations")
 TZ_IST = ZoneInfo("Asia/Kolkata")
 
 # Currencies monitored by default for window alerts and balance snapshots
-_DEFAULT_CURRENCIES: list[str] = ["USD", "GBP", "AED"]
+_DEFAULT_CURRENCIES: list[str] = ["USD", "EUR", "GBP", "AED"]
 
 
 def _tomorrow_9am_ist(now_utc: datetime) -> datetime:

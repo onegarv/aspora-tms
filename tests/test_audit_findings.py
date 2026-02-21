@@ -133,7 +133,7 @@ def _make_agent(
         "monitor_interval_sec":     0.0,
         "stale_proposal_age_min":   90,
         "lookahead_days":           3,
-        "monitored_currencies":     ["USD", "GBP", "AED"],
+        "monitored_currencies":     ["USD", "EUR", "GBP", "AED"],
     }
     agent = OperationsAgent(
         bus=bus, calendar=cal, window_manager=wm,
