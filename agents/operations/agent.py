@@ -258,6 +258,20 @@ class OperationsAgent(BaseAgent):
         now_utc  = datetime.now(timezone.utc)
         deadline = _tomorrow_9am_ist(now_utc)
 
+        # Stale event guard: drop events whose computed trading date precedes the
+        # agent's current date (can happen on day-boundary bus replays).
+        computed_date = self._cal.today(IN_RBI_FX, now_utc)
+        if self._current_date is not None and computed_date < self._current_date:
+            logger.warning(
+                "stale shortfall event discarded — event date precedes current trading day",
+                extra={
+                    "currency":     ccy,
+                    "event_date":   str(computed_date),
+                    "current_date": str(self._current_date),
+                },
+            )
+            return
+
         # Step 3: window feasibility
         try:
             window_ok = self._windows.opens_before(ccy, deadline, now_utc)
