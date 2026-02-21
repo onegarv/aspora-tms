@@ -25,6 +25,10 @@ def create_app(
     cb_client=None,
     clearbank_nostro_map: dict | None = None,
 ) -> FastAPI:
+from api.routers import balances, deals, events, exposure, forecast, holidays, pnl, proposals, risk, transfers, windows
+
+
+def create_app(fund_mover, maker_checker, window_manager, calendar, bus) -> FastAPI:
     """
     Create and configure the FastAPI application.
 
@@ -66,6 +70,10 @@ def create_app(
     app.include_router(holidays.router,  prefix=PREFIX)
     app.include_router(events.router,    prefix=PREFIX)
     app.include_router(clearbank.router, prefix=PREFIX)
+    app.include_router(deals.router,     prefix=PREFIX)
+    app.include_router(pnl.router,       prefix=PREFIX)
+    app.include_router(forecast.router,  prefix=PREFIX)
+    app.include_router(risk.router,      prefix=PREFIX)
 
     return app
 

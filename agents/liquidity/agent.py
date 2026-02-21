@@ -41,6 +41,7 @@ from bus.events import (
     Event,
 )
 from config.settings import settings as default_settings
+from services.calendar_service import IN_RBI_FX
 
 if TYPE_CHECKING:
     from bus.base import EventBus
@@ -49,10 +50,10 @@ if TYPE_CHECKING:
 
 # Fallback spot rates used if Metabase is unreachable at startup
 _FALLBACK_RATES: dict[str, float] = {
-    "USD_INR": 84.0,
-    "GBP_INR": 106.0,
-    "EUR_INR":  91.0,
-    "AED_INR":  22.9,
+    "USD_INR":  91.0,
+    "GBP_INR": 122.31,
+    "EUR_INR": 107.22,
+    "AED_INR":  24.71,
 }
 
 
@@ -108,18 +109,19 @@ class LiquidityAgent(BaseAgent):
         5. Emit SHORTFALL_ALERT for each underfunded corridor.
         """
         today = date.today()
-        self.logger.info("run_daily start  date=%s", today.isoformat())
+        forecast_date = self.calendar.next_business_day(today, IN_RBI_FX)
+        self.logger.info("run_daily start  date=%s  forecast_date=%s", today.isoformat(), forecast_date.isoformat())
 
         # ── 1. Refresh market data (blocking I/O → thread pool) ───────────────
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._load_market_data)
 
         # ── 2. Forecast raw USD volumes per corridor ──────────────────────────
-        forecast_usd = self._forecaster.forecast(today)
-        confidence   = self._forecaster.confidence(today)
+        forecast_usd = self._forecaster.forecast(forecast_date)
+        confidence   = self._forecaster.confidence(forecast_date)
 
         # ── 3. Apply multiplier stack ─────────────────────────────────────────
-        multipliers = self._multiplier_engine.compute(today, self.calendar)
+        multipliers = self._multiplier_engine.compute(forecast_date, self.calendar)
         adjusted_usd = {
             corridor: self._multiplier_engine.apply(
                 vol, multipliers, self.config.max_total_multiplier
@@ -131,7 +133,7 @@ class LiquidityAgent(BaseAgent):
         effective_rates = self._rate_resolver.resolve(
             self._spot_rates, self._fx_band, self.config.fx_band_rate_strategy,
         )
-        usd_inr = effective_rates.get("USD_INR", 84.0)
+        usd_inr = effective_rates.get("USD_INR", 91.0)
         currency_split: dict[str, float] = {}
         for corridor, vol_usd in adjusted_usd.items():
             ccy              = corridor.split("_")[0]          # "AED_INR" → "AED"
@@ -145,7 +147,7 @@ class LiquidityAgent(BaseAgent):
         await self.emit(
             FORECAST_READY,
             {
-                "forecast_date":      today.isoformat(),
+                "forecast_date":      forecast_date.isoformat(),
                 "total_inr_crores":   total_inr_crores,
                 "confidence":         confidence.value,
                 "currency_split":     currency_split,

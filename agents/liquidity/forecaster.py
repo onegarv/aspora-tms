@@ -76,7 +76,8 @@ class VolumeForecaster:
             weights   = [self.decay ** i for i in range(len(same_dow))]
             total_w   = sum(weights)
             forecast  = sum(s["volume_usd"] * w for s, w in zip(same_dow, weights)) / total_w
-            result[corridor] = round(forecast, 2)
+            last_week_actual = same_dow[0]["volume_usd"]
+            result[corridor] = round(max(forecast, last_week_actual), 2)
 
         return result
 

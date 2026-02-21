@@ -126,3 +126,67 @@ class EventSummary(BaseModel):
     timestamp_utc: str
     correlation_id: str
     payload: dict[str, Any]
+
+
+# ── FX Deal schema ─────────────────────────────────────────────────────────────
+
+class FxDealResponse(BaseModel):
+    id: str
+    corridor: str           # "USD_INR", "GBP_INR", etc.
+    side: str               # "BUY" | "SELL"
+    amount_usd: str
+    rate: str
+    amount_native: str
+    status: str             # "OPEN" | "COVERED" | "SETTLED" | "CANCELLED"
+    executed_at: str
+    trader: str
+
+
+# ── PnL schema ────────────────────────────────────────────────────────────────
+
+class PnLEntryResponse(BaseModel):
+    currency: str
+    realised: str
+    unrealised: str
+    total: str
+    as_of: str
+
+
+# ── Forecast schema ───────────────────────────────────────────────────────────
+
+class DailyForecastResponse(BaseModel):
+    forecast_date: str
+    total_inr_crores: str
+    confidence: str         # "low" | "medium" | "high"
+    currency_split: dict[str, str]
+    multipliers_applied: dict[str, str]
+    created_at: str
+
+
+class ShortfallAlertResponse(BaseModel):
+    currency: str
+    required_amount: str
+    available_balance: str
+    shortfall: str
+    severity: str           # "warning" | "critical"
+    detected_at: str
+
+
+# ── Risk Limits schema ────────────────────────────────────────────────────────
+
+class RiskLimitsResponse(BaseModel):
+    max_single_deal_usd: str
+    max_open_exposure_pct: str
+    stop_loss_paise: str
+    dual_checker_threshold_usd: str
+    prefunding_buffer_pct: str
+    updated_at: str
+    updated_by: str
+
+
+class RiskLimitsUpdate(BaseModel):
+    max_single_deal_usd: Optional[str] = None
+    max_open_exposure_pct: Optional[str] = None
+    stop_loss_paise: Optional[str] = None
+    dual_checker_threshold_usd: Optional[str] = None
+    prefunding_buffer_pct: Optional[str] = None

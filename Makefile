@@ -1,4 +1,4 @@
-.PHONY: install test test-cov lint typecheck run-api run-agents up down logs ps
+.PHONY: install test test-cov lint typecheck run run-api run-agents up down logs ps
 
 # ── Local dev ─────────────────────────────────────────────────────────────────
 
@@ -17,11 +17,14 @@ lint:
 typecheck:
 	mypy .
 
+run:
+	python3 run.py
+
 run-api:
 	uvicorn api.app:app --reload --port 3001
 
 run-agents:
-	python main.py
+	python3 main.py
 
 # ── Docker ────────────────────────────────────────────────────────────────────
 
