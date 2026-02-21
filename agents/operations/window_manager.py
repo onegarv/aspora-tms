@@ -145,6 +145,45 @@ class TransferWindow:
         delta_sec = (close_dt - local).total_seconds()
         return max(0, int(delta_sec / 60))
 
+    # ── IST conversion helpers ─────────────────────────────────────────────
+    # Always compute dynamically — never hardcode IST equivalents, as they
+    # shift by 1 hour twice a year with US/UK/EU DST transitions.
+
+    def close_time_ist(self, for_date: date | None = None) -> time:
+        """
+        Return this rail's official close time converted to IST for the given date.
+        Accounts for DST in the source timezone automatically.
+        """
+        d = for_date or date.today()
+        close_dt = datetime.combine(d, self.official_close_time, tzinfo=self.timezone)
+        return close_dt.astimezone(TZ_IST).time()
+
+    def open_time_ist(self, for_date: date | None = None) -> time:
+        """
+        Return this rail's official open time converted to IST for the given date.
+        Accounts for DST in the source timezone automatically.
+        """
+        d = for_date or date.today()
+        open_dt = datetime.combine(d, self.official_open_time, tzinfo=self.timezone)
+        return open_dt.astimezone(TZ_IST).time()
+
+    def window_ist_summary(self, for_date: date | None = None) -> dict:
+        """
+        Full summary of this window in both local and IST times for the given date.
+        Use this for dashboard display and alert messages — never hardcode IST equivalents.
+        """
+        d = for_date or date.today()
+        return {
+            "currency":    self.currency,
+            "rail":        self.rail_name,
+            "local_open":  self.official_open_time.isoformat(),
+            "local_close": self.official_close_time.isoformat(),
+            "local_tz":    str(self.timezone),
+            "ist_open":    self.open_time_ist(d).isoformat(),
+            "ist_close":   self.close_time_ist(d).isoformat(),
+            "date":        d.isoformat(),
+        }
+
     def next_open(self, current_time: datetime) -> datetime:
         """
         Returns the next datetime when this window will open (in the rail's tz).

@@ -439,3 +439,67 @@ class TestHolidayCalendarFailure:
         deadline = dt(2026, 2, 16, 22, 0, TZ_ET)
         result   = wm.can_complete_path("USD", "INR", 50_000, deadline, current)
         assert result is False
+
+
+# ── DST IST conversion tests ──────────────────────────────────────────────────
+
+class TestDSTISTConversion:
+    """
+    Fedwire closes at 18:00 ET.
+    EST (UTC-5, winter): 18:00 ET = 23:30 UTC = 05:00 IST (+1d) — wait, let's be precise:
+      18:00 ET + 5h30m = 23:30 UTC; 23:30 UTC + 5h30m = 05:00 IST next day?
+      No: 18:00 EST = 23:00 UTC; 23:00 UTC + 5:30 = 04:30 IST (+1d)
+    EDT (UTC-4, summer): 18:00 ET = 22:00 UTC; 22:00 UTC + 5:30 = 03:30 IST (+1d)
+    """
+
+    def test_close_time_ist_winter(self):
+        """Jan 15 is EST (UTC-5). Fedwire 18:00 ET → 04:30 IST next day."""
+        wm  = make_wm()
+        usd = wm.get_window("USD")
+        ist = usd.close_time_ist(date(2026, 1, 15))
+        assert ist.hour == 4
+        assert ist.minute == 30
+
+    def test_close_time_ist_summer(self):
+        """Jul 15 is EDT (UTC-4). Fedwire 18:00 ET → 03:30 IST next day."""
+        wm  = make_wm()
+        usd = wm.get_window("USD")
+        ist = usd.close_time_ist(date(2026, 7, 15))
+        assert ist.hour == 3
+        assert ist.minute == 30
+
+    def test_open_time_ist_changes_with_dst(self):
+        """Fedwire open time in IST should differ between winter and summer."""
+        wm  = make_wm()
+        usd = wm.get_window("USD")
+        ist_winter = usd.open_time_ist(date(2026, 1, 15))
+        ist_summer = usd.open_time_ist(date(2026, 7, 15))
+        # Both are valid IST times, but they must differ by exactly 1 hour
+        diff = abs(ist_winter.hour - ist_summer.hour)
+        assert diff == 1
+
+    def test_window_ist_summary_fields(self):
+        """window_ist_summary() returns all required keys and consistent values."""
+        wm      = make_wm()
+        usd     = wm.get_window("USD")
+        summary = usd.window_ist_summary(date(2026, 1, 15))
+
+        assert set(summary.keys()) == {
+            "currency", "rail", "local_open", "local_close",
+            "local_tz", "ist_open", "ist_close", "date",
+        }
+        # Local times never change with DST
+        assert summary["local_close"] == "18:00:00"
+        assert summary["local_open"]  == "09:00:00"
+        # IST equivalent should be set
+        assert summary["ist_close"] == "04:30:00"
+        assert summary["date"]      == "2026-01-15"
+
+    def test_ist_summary_differs_winter_vs_summer(self):
+        """The IST equivalents differ between winter and summer dates."""
+        wm      = make_wm()
+        usd     = wm.get_window("USD")
+        winter  = usd.window_ist_summary(date(2026, 1, 15))
+        summer  = usd.window_ist_summary(date(2026, 7, 15))
+        assert winter["ist_close"] != summer["ist_close"]
+        assert winter["local_close"] == summer["local_close"]  # local time unchanged
