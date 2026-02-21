@@ -228,6 +228,15 @@ class OperationsAgent(BaseAgent):
             logger.error("shortfall event missing currency field", extra={"payload": p})
             return
 
+        # Step 0: severity gate — WARNING shortfalls are logged but do not trigger a proposal
+        severity = p.get("severity", "critical").lower()
+        if severity == "warning":
+            logger.warning(
+                "WARNING-level shortfall — monitoring only, no proposal created",
+                extra={"currency": ccy, "shortfall": p.get("shortfall")},
+            )
+            return
+
         # Step 1: Decimal conversion
         try:
             shortfall_amount = Decimal(str(p["shortfall"]))
