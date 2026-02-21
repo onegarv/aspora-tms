@@ -3,7 +3,7 @@
 Last updated: 2026-02-21
 Kanban board: `docs/KANBAN.md`
 
-## Overall: 7/25 complete
+## Overall: 10/25 complete
 
 ## Operations Agent (You) — 6/6 ✅
 - [x] R1: Window Manager — Banking hours, timezone-aware transfer windows, DST
@@ -13,10 +13,10 @@ Kanban board: `docs/KANBAN.md`
 - [x] R5: Fund Mover — Transfer execution, bank API, retry logic
 - [x] R6: Ops Agent Wiring — Orchestrator, decision tree, edge cases
 
-## Liquidity Agent (Colleague A) — 0/3
-- [~] R7: Volume Forecaster — Weighted moving avg, same-weekday prediction
-- [ ] R8: Multiplier Engine — Payday, holiday, FX elasticity, day-of-week
-- [ ] R9: RDA Checker & Agent Wiring — Balance sufficiency, currency split
+## Liquidity Agent (Colleague A) — 3/3 ✅
+- [x] R7: Volume Forecaster — Same-weekday EMA, exponential decay weights
+- [x] R8: Multiplier Engine — Payday (1.4×), holiday pre/post, capped at 2.5×
+- [x] R9: RDA Checker & Agent Wiring — Sufficiency check, CRITICAL/WARNING severity, full agent wiring
 
 ## Dashboard & UI (You) — 0/5
 - [ ] D1: Dashboard API (FastAPI) — REST endpoints for balances, deals, exposure
@@ -51,6 +51,7 @@ Kanban board: `docs/KANBAN.md`
 ## Changelog
 - 2026-02-20: Ops Agent (R1-R6) complete
 - 2026-02-21: Merged integration/fx (FX Band Predictor); built agents/fx_analyst/agent.py bridge adapter — R10 done
+- 2026-02-21: Liquidity Agent (R7-R9) confirmed merged to master — all three rounds complete
 
 ---
 

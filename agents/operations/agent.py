@@ -63,7 +63,7 @@ logger = logging.getLogger("tms.agent.operations")
 TZ_IST = ZoneInfo("Asia/Kolkata")
 
 # Currencies monitored by default for window alerts and balance snapshots
-_DEFAULT_CURRENCIES: list[str] = ["USD", "GBP", "AED"]
+_DEFAULT_CURRENCIES: list[str] = ["USD", "EUR", "GBP", "AED"]
 
 
 def _tomorrow_9am_ist(now_utc: datetime) -> datetime:
@@ -103,6 +103,8 @@ class OperationsAgent(BaseAgent):
 
         # Idempotency keys submitted this calendar day (reset on day rollover).
         self._pending_intents: set[str] = set()
+        # Whether _pending_intents has been restored from MC for today (restart safety).
+        self._intents_restored: bool = False
 
         # Cumulative deal amounts per currency for today (reset on day rollover).
         self._cumulative_deals: dict[str, Decimal] = {}
@@ -182,7 +184,7 @@ class OperationsAgent(BaseAgent):
             HOLIDAY_LOOKAHEAD,
             payload={
                 **lookahead,
-                "generated_at_utc": now_utc.isoformat(),
+                "generated_at": now_utc.isoformat(),
             },
         )
 
@@ -207,7 +209,7 @@ class OperationsAgent(BaseAgent):
         Stores the forecast and emits a fresh nostro balance snapshot.
         """
         self.today_forecast = event.payload
-        await self._emit_nostro_balances()
+        await self._emit_nostro_balances(correlation_id=event.correlation_id)
         logger.info("daily forecast received, nostro snapshot refreshed")
 
     async def handle_shortfall(self, event: Event) -> None:
@@ -228,6 +230,15 @@ class OperationsAgent(BaseAgent):
             logger.error("shortfall event missing currency field", extra={"payload": p})
             return
 
+        # Step 0: severity gate — WARNING shortfalls are logged but do not trigger a proposal
+        severity = p.get("severity", "critical").lower()
+        if severity == "warning":
+            logger.warning(
+                "WARNING-level shortfall — monitoring only, no proposal created",
+                extra={"currency": ccy, "shortfall": p.get("shortfall")},
+            )
+            return
+
         # Step 1: Decimal conversion
         try:
             shortfall_amount = Decimal(str(p["shortfall"]))
@@ -235,13 +246,31 @@ class OperationsAgent(BaseAgent):
             logger.error("malformed shortfall payload", extra={"error": str(exc)})
             return
 
-        # Step 2: transfer with buffer
-        transfer_amount = (shortfall_amount * (1 + self._prefunding_buffer)).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        # Step 2: shortfall from RDAChecker already includes the prefunding buffer
+        # (required_amount = forecast * (1 + buffer_pct) → shortfall is buffer-inclusive)
+        # Do NOT apply the buffer again — that would result in 1.10 × 1.10 = 1.21× coverage.
+        transfer_amount = shortfall_amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        # Pre-generate a stable request ID used in all FUND_MOVEMENT_STATUS events,
+        # including error paths, so callers can correlate status events to proposals.
+        proposal_id = str(uuid.uuid4())
 
         now_utc  = datetime.now(timezone.utc)
         deadline = _tomorrow_9am_ist(now_utc)
+
+        # Stale event guard: drop events whose computed trading date precedes the
+        # agent's current date (can happen on day-boundary bus replays).
+        computed_date = self._cal.today(IN_RBI_FX, now_utc)
+        if self._current_date is not None and computed_date < self._current_date:
+            logger.warning(
+                "stale shortfall event discarded — event date precedes current trading day",
+                extra={
+                    "currency":     ccy,
+                    "event_date":   str(computed_date),
+                    "current_date": str(self._current_date),
+                },
+            )
+            return
 
         # Step 3: window feasibility
         try:
@@ -261,6 +290,7 @@ class OperationsAgent(BaseAgent):
             await self.emit(
                 FUND_MOVEMENT_STATUS,
                 payload={
+                    "proposal_id": proposal_id,
                     "currency": ccy,
                     "amount":   str(transfer_amount),
                     "status":   "window_not_feasible",
@@ -288,6 +318,7 @@ class OperationsAgent(BaseAgent):
             await self.emit(
                 FUND_MOVEMENT_STATUS,
                 payload={
+                    "proposal_id": proposal_id,
                     "currency":  ccy,
                     "amount":    str(transfer_amount),
                     "status":    "insufficient_balance",
@@ -300,6 +331,10 @@ class OperationsAgent(BaseAgent):
         # Step 5: idempotency
         today_str       = self._cal.today(IN_RBI_FX, now_utc).isoformat()
         idempotency_key = f"{ccy}-{today_str}-shortfall"
+        # Restore from MC on the first shortfall of the day (survives process restarts).
+        if not self._intents_restored:
+            await self._restore_pending_intents(now_utc)
+            self._intents_restored = True
         if idempotency_key in self._pending_intents:
             logger.info(
                 "shortfall proposal already submitted today — skipping",
@@ -307,21 +342,42 @@ class OperationsAgent(BaseAgent):
             )
             return
 
-        # Step 6: submit proposal
+        # Step 6: resolve rail — raises ValueError for unsupported currencies (e.g. EUR)
+        try:
+            rail = self._windows.get_rail(ccy)
+        except (ValueError, KeyError) as exc:
+            logger.error(
+                "no transfer rail configured for currency — cannot route shortfall",
+                extra={"currency": ccy, "error": str(exc)},
+            )
+            await self.emit(
+                FUND_MOVEMENT_STATUS,
+                payload={
+                    "currency": ccy,
+                    "amount":   str(transfer_amount),
+                    "status":   "window_not_feasible",
+                    "reason":   f"No transfer rail configured for {ccy}",
+                },
+                correlation_id=event.correlation_id,
+            )
+            return
+
+        # Step 7: submit proposal
         proposal = FundMovementProposal(
-            id                 = str(uuid.uuid4()),
+            id                 = proposal_id,
             currency           = ccy,
-            amount             = float(transfer_amount),   # domain model uses float
+            amount             = transfer_amount,
             source_account     = self._fm.get_operating_account(ccy),
             destination_nostro = self._fm.get_nostro_account(ccy),
-            rail               = self._windows.get_rail(ccy),
+            rail               = rail,
             proposed_by        = "system:operations_agent",
             purpose            = f"RDA shortfall cover {today_str}",
             idempotency_key    = idempotency_key,
         )
         result = await self._mc.submit_proposal(proposal)
-        self._pending_proposals[proposal.id] = proposal
-        self._pending_intents.add(idempotency_key)
+        if result.get("status") != "rejected":
+            self._pending_proposals[proposal.id] = proposal
+            self._pending_intents.add(idempotency_key)
 
         await self.emit(
             FUND_MOVEMENT_STATUS,
@@ -404,8 +460,17 @@ class OperationsAgent(BaseAgent):
 
         Accumulates deal amounts per currency. When cumulative deals exceed
         `nostro_topup_trigger_pct × available_balance`, submits a top-up proposal.
+
+        HOLD direction: signals a pause in deal flow — not accumulated and does
+        not trigger top-up logic.
         """
         p   = event.payload
+        direction = (p.get("direction") or "").upper()
+        if direction == "HOLD":
+            logger.info("HOLD deal instruction received — skipping accumulation",
+                        extra={"payload_currency": p.get("currency")})
+            return
+
         # Support both flat `currency` and `currency_pair` ("USD/INR") formats
         ccy = p.get("currency") or (p.get("currency_pair", "/").split("/")[0])
         if not ccy:
@@ -500,7 +565,7 @@ class OperationsAgent(BaseAgent):
         proposal = FundMovementProposal(
             id                 = str(uuid.uuid4()),
             currency           = ccy,
-            amount             = float(topup_amount),
+            amount             = topup_amount,
             source_account     = self._fm.get_operating_account(ccy),
             destination_nostro = self._fm.get_nostro_account(ccy),
             rail               = self._windows.get_rail(ccy),
@@ -509,8 +574,9 @@ class OperationsAgent(BaseAgent):
             idempotency_key    = idempotency_key,
         )
         result = await self._mc.submit_proposal(proposal)
-        self._pending_proposals[proposal.id] = proposal
-        self._pending_intents.add(idempotency_key)
+        if result.get("status") != "rejected":
+            self._pending_proposals[proposal.id] = proposal
+            self._pending_intents.add(idempotency_key)
 
         await self.emit(
             FUND_MOVEMENT_STATUS,
@@ -569,6 +635,7 @@ class OperationsAgent(BaseAgent):
                     "rail":              rail,
                     "minutes_remaining": mins,
                     "close_time_utc":    now_utc.isoformat(),
+                    "generated_at":      now_utc.isoformat(),
                 }
                 # Add dynamic IST equivalent for rails that have a fixed local close time.
                 # AED uses a GST cutoff (not a TransferWindow) so is excluded.
@@ -680,18 +747,19 @@ class OperationsAgent(BaseAgent):
 
         return transitions
 
-    async def _emit_nostro_balances(self) -> None:
+    async def _emit_nostro_balances(self, correlation_id: str | None = None) -> None:
         """Publish current available balance for each monitored currency."""
-        balances: dict[str, str] = {}
+        balances: dict[str, float] = {}
         for ccy in self._monitored_currencies:
             try:
-                balances[ccy] = str(self._fm.available_balance(ccy))
+                balances[ccy] = float(self._fm.available_balance(ccy))
             except Exception as exc:
                 logger.warning(
                     "balance query failed",
                     extra={"currency": ccy, "error": str(exc)},
                 )
-        await self.emit(NOSTRO_BALANCE_UPDATE, payload={"balances": balances})
+        await self.emit(NOSTRO_BALANCE_UPDATE, payload={"balances": balances},
+                        correlation_id=correlation_id)
 
     async def _check_stale_proposals(self, now_utc: datetime) -> None:
         """Emit stale-review alert for proposals pending longer than stale_proposal_age_min."""
@@ -717,6 +785,42 @@ class OperationsAgent(BaseAgent):
                     extra={"proposal_id": proposal_id, "age_minutes": int(age.total_seconds() / 60)},
                 )
 
+    async def _restore_pending_intents(self, now_utc: datetime | None = None) -> None:
+        """
+        Repopulate _pending_intents from the MC's proposal list.
+
+        Called lazily on the first shortfall of each day so that idempotency
+        survives process restarts — a restarted agent won't re-submit proposals
+        that a previous instance already submitted today.
+
+        Uses getattr so this is a no-op for MC stubs that don't implement
+        list_proposals (e.g. simple unit-test mocks).
+        """
+        list_proposals = getattr(self._mc, "list_proposals", None)
+        if list_proposals is None:
+            return
+        try:
+            proposals = await list_proposals()
+        except Exception as exc:
+            logger.warning(
+                "could not restore pending intents from MC",
+                extra={"error": str(exc)},
+            )
+            return
+        if now_utc is None:
+            now_utc = datetime.now(timezone.utc)
+        today_str = self._cal.today(IN_RBI_FX, now_utc).isoformat()
+        restored = 0
+        for p in proposals:
+            if p.idempotency_key and today_str in p.idempotency_key:
+                self._pending_intents.add(p.idempotency_key)
+                restored += 1
+        if restored:
+            logger.info(
+                "pending intents restored from MC on startup",
+                extra={"count": restored, "date": today_str},
+            )
+
     def _check_day_rollover(self, now_utc: datetime) -> None:
         """Reset per-day state when the IST calendar date advances."""
         today = self._cal.today(IN_RBI_FX, now_utc)
@@ -729,6 +833,7 @@ class OperationsAgent(BaseAgent):
             self._cumulative_deals    = {}
             self._window_alerts_sent  = set()
             self._pending_intents     = set()
+            self._intents_restored    = False
 
     async def shutdown(self) -> None:
         """Gracefully stop the window-monitoring loop."""

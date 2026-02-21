@@ -183,8 +183,8 @@ async def test_handle_shortfall_submits_proposal():
     assert len(mc.submitted) == 1
     proposal = mc.submitted[0]
     assert proposal.currency == "USD"
-    # transfer = 10_000 × 1.10 = 11_000.00
-    assert abs(proposal.amount - 11_000.0) < 0.01
+    # transfer = shortfall exactly (RDAChecker already includes buffer — no double-buffer)
+    assert abs(proposal.amount - Decimal("10000")) < Decimal("0.01")
 
     # FUND_MOVEMENT_STATUS emitted with pending_approval
     status_events = bus.get_events(FUND_MOVEMENT_STATUS)
@@ -259,7 +259,7 @@ async def test_handle_proposal_approved_executes_and_emits_balance_update():
     proposal = FundMovementProposal(
         id                 = str(uuid.uuid4()),
         currency           = "USD",
-        amount             = 5_000.0,
+        amount             = Decimal("5000.00"),
         source_account     = "OPS-USD-001",
         destination_nostro = "NOSTRO-USD-001",
         rail               = "fedwire",
@@ -307,7 +307,7 @@ async def test_handle_proposal_approved_submit_unknown_triggers_manual_review():
     proposal = FundMovementProposal(
         id                 = str(uuid.uuid4()),
         currency           = "USD",
-        amount             = 5_000.0,
+        amount             = Decimal("5000.00"),
         source_account     = "OPS-USD-001",
         destination_nostro = "NOSTRO-USD-001",
         rail               = "fedwire",
@@ -366,7 +366,7 @@ async def test_handle_deal_instruction_triggers_topup():
     proposal = mc.submitted[0]
     assert proposal.currency == "USD"
     # topup_amount = 9500 × 1.20 = 11_400.00
-    assert abs(proposal.amount - 11_400.0) < 0.01
+    assert abs(proposal.amount - Decimal("11400")) < Decimal("0.01")
 
     # FUND_MOVEMENT_STATUS emitted
     status_events = bus.get_events(FUND_MOVEMENT_STATUS)

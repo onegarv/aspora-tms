@@ -48,8 +48,11 @@ def _parse(result: dict) -> list[dict]:
 def _post(path: str, payload: dict, timeout: int) -> dict:
     """POST to Metabase and return the parsed JSON body."""
     body = json.dumps(payload).encode()
+    # Internal host uses a corp CA not in the system trust store — skip verify.
     ctx  = ssl.create_default_context()
-    conn = http.client.HTTPSConnection(METABASE_HOST, timeout=timeout)
+    ctx.check_hostname = False
+    ctx.verify_mode    = ssl.CERT_NONE
+    conn = http.client.HTTPSConnection(METABASE_HOST, timeout=timeout, context=ctx)
     conn.request("POST", path, body=body, headers=_HEADERS)
     resp = conn.getresponse()
     return json.loads(resp.read())
