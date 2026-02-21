@@ -251,6 +251,10 @@ class OperationsAgent(BaseAgent):
         # Do NOT apply the buffer again — that would result in 1.10 × 1.10 = 1.21× coverage.
         transfer_amount = shortfall_amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
+        # Pre-generate a stable request ID used in all FUND_MOVEMENT_STATUS events,
+        # including error paths, so callers can correlate status events to proposals.
+        proposal_id = str(uuid.uuid4())
+
         now_utc  = datetime.now(timezone.utc)
         deadline = _tomorrow_9am_ist(now_utc)
 
@@ -272,6 +276,7 @@ class OperationsAgent(BaseAgent):
             await self.emit(
                 FUND_MOVEMENT_STATUS,
                 payload={
+                    "proposal_id": proposal_id,
                     "currency": ccy,
                     "amount":   str(transfer_amount),
                     "status":   "window_not_feasible",
@@ -299,6 +304,7 @@ class OperationsAgent(BaseAgent):
             await self.emit(
                 FUND_MOVEMENT_STATUS,
                 payload={
+                    "proposal_id": proposal_id,
                     "currency":  ccy,
                     "amount":    str(transfer_amount),
                     "status":    "insufficient_balance",
@@ -344,7 +350,7 @@ class OperationsAgent(BaseAgent):
 
         # Step 7: submit proposal
         proposal = FundMovementProposal(
-            id                 = str(uuid.uuid4()),
+            id                 = proposal_id,
             currency           = ccy,
             amount             = transfer_amount,
             source_account     = self._fm.get_operating_account(ccy),
