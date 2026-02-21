@@ -16,8 +16,8 @@ COPY . .
 
 # ── Stage 2: api ──────────────────────────────────────────────────────────────
 FROM base AS api
-EXPOSE 8000
-CMD ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 3001
+CMD ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "3001"]
 
 # ── Stage 3: agents ───────────────────────────────────────────────────────────
 FROM base AS agents

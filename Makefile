@@ -18,7 +18,7 @@ typecheck:
 	mypy .
 
 run-api:
-	uvicorn api.app:app --reload --port 8000
+	uvicorn api.app:app --reload --port 3001
 
 run-agents:
 	python main.py
