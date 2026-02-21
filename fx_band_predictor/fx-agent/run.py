@@ -34,18 +34,33 @@ from pathlib import Path
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def install_dependencies():
-    """Install Python dependencies from requirements.txt."""
-    req_file = os.path.join(PROJECT_DIR, "requirements.txt")
-    if not os.path.exists(req_file):
-        print("[setup] WARNING: requirements.txt not found — skipping dependency install")
+VENV_DIR = os.path.join(PROJECT_DIR, ".venv")
+
+
+def ensure_venv_and_deps():
+    """Create a virtual environment if needed, install deps, and re-exec inside it."""
+    # If already inside our venv, just install deps and return
+    if sys.prefix == os.path.realpath(VENV_DIR):
+        req_file = os.path.join(PROJECT_DIR, "requirements.txt")
+        if os.path.exists(req_file):
+            print("[setup] Installing dependencies from requirements.txt...")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", req_file, "-q"])
+            print("[setup] Dependencies installed.")
         return
-    print("[setup] Installing dependencies from requirements.txt...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", req_file, "-q"])
-    print("[setup] Dependencies installed.")
+
+    # Create venv if it doesn't exist
+    if not os.path.exists(VENV_DIR):
+        print(f"[setup] Creating virtual environment at {VENV_DIR}...")
+        subprocess.check_call([sys.executable, "-m", "venv", VENV_DIR])
+        print("[setup] Virtual environment created.")
+
+    # Re-exec this script inside the venv
+    venv_python = os.path.join(VENV_DIR, "bin", "python")
+    print(f"[setup] Re-launching inside venv...")
+    os.execv(venv_python, [venv_python] + sys.argv)
 
 
-install_dependencies()
+ensure_venv_and_deps()
 sys.path.insert(0, PROJECT_DIR)
 
 SAVED_DIR = os.path.join(PROJECT_DIR, "models", "saved")
