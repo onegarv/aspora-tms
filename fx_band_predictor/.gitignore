@@ -4,7 +4,6 @@ __pycache__/
 .venv/
 venv/
 .DS_Store
-*.pkl
 *.h5
 *.keras
 .claude/
