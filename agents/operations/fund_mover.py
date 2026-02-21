@@ -434,7 +434,11 @@ class FundMover:
         # ── 1. Look up or create execution record ─────────────────────────
         execution = self._store.get_by_proposal_id(proposal.id)
         if execution is None:
-            rail   = self._resolve_rail(proposal)
+            # Validate AED submission timing before creating the execution record.
+            if proposal.currency.upper() == "AED":
+                self._check_aed_window()
+
+            rail   = proposal.rail
             amount = proposal.amount.quantize(
                 Decimal("0.01"), rounding=ROUND_HALF_UP
             )

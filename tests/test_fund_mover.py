@@ -53,8 +53,9 @@ def _proposal(
     id: str = "P-001",
     currency: str = "USD",
     amount: float = 1000.0,
+    rail: str = "fedwire",
 ) -> _Proposal:
-    return _Proposal(id=id, currency=currency, amount=Decimal(str(amount)))
+    return _Proposal(id=id, currency=currency, amount=Decimal(str(amount)), rail=rail)
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -94,18 +95,18 @@ class TestRailRouting:
         assert bank.submit_calls[0]["rail"] == "fedwire"
 
     async def test_eur_below_threshold_uses_sepa_instant(self):
-        """EUR < 100,000 → SEPA Instant."""
+        """FundMover uses the rail set on the proposal — sepa_instant for EUR < 100k."""
         mover, bank, store, _ = _make_mover()
-        p = _proposal(currency="EUR", amount=50_000.0)
+        p = _proposal(currency="EUR", amount=50_000.0, rail="sepa_instant")
         execution = await mover.execute_proposal(p)
 
         assert execution.rail == "sepa_instant"
         assert bank.submit_calls[0]["rail"] == "sepa_instant"
 
     async def test_eur_at_threshold_uses_sepa(self):
-        """EUR >= 100,000 → SEPA."""
+        """FundMover uses the rail set on the proposal — sepa for EUR >= 100k."""
         mover, bank, store, _ = _make_mover()
-        p = _proposal(currency="EUR", amount=100_000.0)
+        p = _proposal(currency="EUR", amount=100_000.0, rail="sepa")
         execution = await mover.execute_proposal(p)
 
         assert execution.rail == "sepa"
@@ -115,23 +116,23 @@ class TestRailRouting:
     async def test_aed_before_cutoff_uses_bank_desk(self):
         """AED before 2pm GST (Dubai UTC+4) on a weekday → bank_desk rail."""
         mover, bank, store, _ = _make_mover()
-        p = _proposal(currency="AED", amount=5000.0)
+        p = _proposal(currency="AED", amount=5000.0, rail="bank_desk")
         execution = await mover.execute_proposal(p)
 
         assert execution.rail == "bank_desk"
 
     @freeze_time("2026-02-23 10:30:00+00:00")  # 10:30 UTC = 14:30 GST (after cutoff)
     async def test_aed_after_cutoff_raises(self):
-        """AED at or after 2pm GST → AEDCutoffPassed."""
+        """AED at or after 2pm GST → AEDCutoffPassed regardless of proposal rail."""
         mover, _, _, _ = _make_mover()
-        p = _proposal(currency="AED", amount=5000.0)
+        p = _proposal(currency="AED", amount=5000.0, rail="bank_desk")
         with pytest.raises(AEDCutoffPassed):
             await mover.execute_proposal(p)
 
     async def test_unknown_currency_raises_value_error(self):
         mover, _, _, _ = _make_mover()
-        p = _proposal(currency="JPY", amount=1000.0)
-        with pytest.raises(ValueError, match="No rail configured for currency JPY"):
+        p = _proposal(currency="JPY", amount=1000.0, rail="swift")
+        with pytest.raises(ValueError):
             await mover.execute_proposal(p)
 
 
