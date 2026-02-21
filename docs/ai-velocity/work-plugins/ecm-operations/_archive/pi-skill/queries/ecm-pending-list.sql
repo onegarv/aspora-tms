@@ -1,0 +1,1 @@
+/Users/apple/code/aspora/ai-velocity/work-plugins/ecm-operations/queries/ecm-pending-list.sql

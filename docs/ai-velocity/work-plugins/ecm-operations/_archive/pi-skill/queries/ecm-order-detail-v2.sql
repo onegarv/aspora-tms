@@ -1,0 +1,1 @@
+/Users/apple/code/aspora/ai-velocity/work-plugins/ecm-operations/queries/ecm-order-detail-v2.sql

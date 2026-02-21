@@ -1,0 +1,14 @@
+# Archives
+*.zip
+*.tar.gz
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Local Claude Code permissions (machine-specific)
+.claude/settings.local.json

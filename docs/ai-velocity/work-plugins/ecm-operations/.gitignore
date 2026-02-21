@@ -1,0 +1,7 @@
+# Secrets
+.env
+manager/.env
+field/.env
+
+# Logs
+manager/logs/

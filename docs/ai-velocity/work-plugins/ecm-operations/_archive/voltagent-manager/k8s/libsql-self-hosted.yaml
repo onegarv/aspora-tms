@@ -1,0 +1,109 @@
+# Self-hosted libSQL Server for K8s
+# Use this instead of Turso Cloud if you want full control
+#
+# Connection URL: http://libsql-server.ecm-operations:8080
+# No auth token needed for in-cluster access (or set SQLD_AUTH_JWT_KEY)
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ecm-operations
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: libsql-data
+  namespace: ecm-operations
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard  # Adjust for your cluster
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: libsql-server
+  namespace: ecm-operations
+spec:
+  serviceName: libsql-server
+  replicas: 1
+  selector:
+    matchLabels:
+      app: libsql-server
+  template:
+    metadata:
+      labels:
+        app: libsql-server
+    spec:
+      containers:
+        - name: sqld
+          image: ghcr.io/tursodatabase/libsql-server:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: SQLD_NODE
+              value: "primary"
+            # Uncomment for JWT auth:
+            # - name: SQLD_AUTH_JWT_KEY
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: libsql-secrets
+            #       key: jwt-key
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/sqld
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: libsql-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: libsql-server
+  namespace: ecm-operations
+spec:
+  selector:
+    app: libsql-server
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  type: ClusterIP
+---
+# Optional: Expose externally (for debugging)
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: libsql-server-external
+#   namespace: ecm-operations
+# spec:
+#   selector:
+#     app: libsql-server
+#   ports:
+#     - port: 8080
+#       targetPort: 8080
+#   type: LoadBalancer

@@ -1,0 +1,22 @@
+# Worktrees — huge, not needed in container
+.claude/worktrees/
+
+# Secrets
+.env
+manager/.env
+field/.env
+
+# Logs
+manager/logs/
+
+# Archive
+_archive/
+
+# Git
+.git/
+
+# Field agent (not needed for manager container)
+field/
+
+# OS files
+.DS_Store

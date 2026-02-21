@@ -1,0 +1,18 @@
+# ECM Manager — Standalone VPS Deploy
+# Usage:
+#   docker compose run --rm ecm-daily          # Full morning flow (triage + patterns)
+#   docker compose run --rm ecm-daily triage   # Triage only
+#   docker compose run --rm ecm-daily patterns # Patterns only
+#   docker compose run --rm ecm-daily test     # Test connections
+#
+# Cron (7AM IST = 1:30 AM UTC):
+#   30 1 * * * cd /path/to/ecm-operations/manager/deploy && docker compose run --rm ecm-daily >> /var/log/ecm-manager.log 2>&1
+
+services:
+  ecm-daily:
+    build:
+      context: ../..
+      dockerfile: manager/deploy/Dockerfile
+    command: ["daily"]
+    env_file: ../.env
+    restart: "no"

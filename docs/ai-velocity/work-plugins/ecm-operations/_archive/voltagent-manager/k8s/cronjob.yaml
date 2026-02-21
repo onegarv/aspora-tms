@@ -1,0 +1,115 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ecm-manager-triage
+  namespace: ecm-operations
+  labels:
+    app: ecm-manager
+    component: triage
+spec:
+  # 7 AM, 2 PM, 8 PM UAE (UTC+4) = 3, 10, 16 UTC
+  schedule: "0 3,10,16 * * *"
+  timeZone: "Asia/Dubai"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: ecm-manager
+            job: triage
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: ecm-manager
+              image: ecm-manager:latest
+              command: ["node", "dist/cli.js", "triage"]
+              envFrom:
+                - secretRef:
+                    name: ecm-manager-secrets
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "500m"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ecm-manager-progress
+  namespace: ecm-operations
+  labels:
+    app: ecm-manager
+    component: progress
+spec:
+  # 11 AM, 5 PM UAE = 7, 13 UTC (mid-morning and end-of-day check)
+  schedule: "0 7,13 * * *"
+  timeZone: "Asia/Dubai"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: ecm-manager
+            job: progress
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: ecm-manager
+              image: ecm-manager:latest
+              command: ["node", "dist/cli.js", "progress"]
+              envFrom:
+                - secretRef:
+                    name: ecm-manager-secrets
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "500m"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ecm-manager-learn
+  namespace: ecm-operations
+  labels:
+    app: ecm-manager
+    component: learn
+spec:
+  # Daily at midnight UAE = 20 UTC
+  schedule: "0 20 * * *"
+  timeZone: "Asia/Dubai"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: ecm-manager
+            job: learn
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: ecm-manager
+              image: ecm-manager:latest
+              command: ["node", "dist/cli.js", "learn"]
+              envFrom:
+                - secretRef:
+                    name: ecm-manager-secrets
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "500m"

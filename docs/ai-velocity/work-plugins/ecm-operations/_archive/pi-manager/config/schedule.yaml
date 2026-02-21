@@ -1,0 +1,69 @@
+# ECM Manager Schedule Configuration
+
+schedule:
+  cron: "0 3,10,16 * * *"  # UTC times = 7AM, 2PM, 8PM UAE
+  timezone: "Asia/Dubai"
+
+  # Human-readable schedule
+  times:
+    - name: "Morning Triage"
+      uae: "7:00 AM"
+      utc: "3:00 AM"
+    - name: "Midday Refresh"
+      uae: "2:00 PM"
+      utc: "10:00 AM"
+    - name: "Evening Handoff"
+      uae: "8:00 PM"
+      utc: "4:00 PM"
+
+slack:
+  channel: "#wg-asap-agent-pilot"
+  channel_id: "C0AD6C36LVC"
+  bot_token_env: "SLACK_BOT_TOKEN"
+  use_threading: true
+
+  # Message style
+  tone: "motivational"  # Product owner style, not robotic
+
+assignment:
+  # Orders >= this amount get special handling
+  high_value_threshold: 5000
+
+  # Distribution algorithm
+  distribution: "round_robin"
+
+  # High-value orders distributed FIRST, round-robin across ALL agents
+  high_value_distribution: "round_robin_first"
+
+  # Agents to exclude from assignments
+  exclude_agents:
+    - dinesh
+    - snita
+    - aakash@aspora.com
+
+alerts:
+  # Alert when SLA is breached
+  sla_breach: true
+
+  # Alert when agent capacity exceeds this %
+  capacity_warning_pct: 80
+
+  # Minimum tickets to trigger alert
+  min_breach_count: 3
+
+spreadsheet:
+  id: "1r50OEZlFVSUmU1tkLBqx2_BzlilZ3s0pArNHV83tRks"
+  tabs:
+    assignments: "Assignments"
+    agents: "Agents"
+    dashboard: "ECM Dashboard"
+
+# SLA hours by diagnosis
+sla:
+  payment_failed: 2
+  status_sync_issue: 1
+  brn_pending: 4
+  cnr_reserved_wait: 4
+  rfi_pending: 24
+  docs_required: 24
+  default: 8

@@ -1,0 +1,3968 @@
+{
+  "title": "🚨 War Room - System Health Dashboard",
+  "description": "Multi-service war room dashboard for overall system health monitoring. Focuses on HTTP and SQS trace metrics across all services.",
+  "layout_type": "ordered",
+  "template_variables": [
+    {
+      "name": "env",
+      "default": "prod",
+      "prefix": "env",
+      "available_values": [
+        "prod",
+        "stg",
+        "dev"
+      ]
+    },
+    {
+      "name": "service",
+      "default": "*",
+      "prefix": "service",
+      "available_values": [
+        "*",
+        "falcon-api-service",
+        "app-server-internal-service",
+        "app-server-service",
+        "fx-api-service",
+        "goblin-service",
+        "goms-service",
+        "recon-service",
+        "rewards-api-service",
+        "user-vault-service"
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "id": 1000,
+      "definition": {
+        "type": "note",
+        "content": "# 🚨 War Room - System Health Dashboard\n\n**Purpose**: Single pane of glass for 30-second health assessment across all services\n\n**Trace Types**: HTTP | SQS (AWS)\n\n**Services Monitored**:\n- falcon-api-service\n- app-server-internal-service\n- app-server-service\n- fx-api-service\n- goblin-service\n- goms-service\n- recon-service\n- rewards-api-service\n- user-vault-service\n\n**🚨 Health Thresholds:**\n- ✅ Healthy: Error Rate < 1%, Latency p95 < 500ms\n- ⚠️ Degraded: Error Rate 1-5%, Latency 500ms-2s\n- 🔴 Critical: Error Rate > 5%, Latency > 2s\n\n**🔍 Quick Debug**: Scroll to service group → Check HTTP/SQS metrics → Review error breakdowns",
+        "background_color": "yellow",
+        "font_size": "normal",
+        "text_align": "left",
+        "vertical_align": "top"
+      },
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 4
+      }
+    },
+    {
+      "id": 1500,
+      "definition": {
+        "type": "group",
+        "title": "📊 System Overview - All Services",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 1501,
+            "definition": {
+              "type": "timeseries",
+              "title": "🌐 HTTP Request Rate (All Services)",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits{$env,$service} by {service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Requests/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 4,
+              "height": 3
+            }
+          },
+          {
+            "id": 1502,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 HTTP 4xx Errors (All Services)",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_4xx",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits.by_http_status{$env,$service,http.status_class:4xx} by {service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "orange",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 4,
+              "y": 0,
+              "width": 4,
+              "height": 3
+            }
+          },
+          {
+            "id": 1503,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 HTTP 5xx Errors (All Services)",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_5xx",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits.by_http_status{$env,$service,http.status_class:5xx} by {service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 8,
+              "y": 0,
+              "width": 4,
+              "height": 3
+            }
+          },
+          {
+            "id": 1504,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ HTTP Latency p95 (All Services)",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "max"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "p95:trace.http.request{$env,$service} by {service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "p95 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "500",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "2000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 0,
+              "y": 3,
+              "width": 4,
+              "height": 3
+            }
+          },
+          {
+            "id": 1505,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS Request Rate (All Services)",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,$service} by {service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 4,
+              "y": 3,
+              "width": 4,
+              "height": 3
+            }
+          },
+          {
+            "id": 1506,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 SQS Error Rate (All Services)",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.errors{span.kind:consumer,$env,$service} by {service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 8,
+              "y": 3,
+              "width": 4,
+              "height": 3
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 4,
+        "width": 12,
+        "height": 7
+      }
+    },
+    {
+      "id": 2000,
+      "definition": {
+        "type": "group",
+        "title": "🔷 falcon-api-service",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 200001,
+            "definition": {
+              "type": "timeseries",
+              "title": "🌐 HTTP Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits{$env,service:falcon-api-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Requests/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200002,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 HTTP Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits.by_http_status{$env,service:falcon-api-service,!http.status_class:2xx}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200003,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ HTTP Latency p95",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "p95:trace.http.request{$env,service:falcon-api-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "p95 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "500",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "2000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200004,
+            "definition": {
+              "type": "timeseries",
+              "title": "📊 HTTP Apdex",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "apdex",
+                      "data_source": "metrics",
+                      "query": "avg:trace.http.request.apdex{$env,service:falcon-api-service}"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Apdex",
+                "scale": "linear",
+                "min": "0",
+                "max": "1"
+              },
+              "markers": [
+                {
+                  "value": "0.8",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "0.5",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 9,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200005,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:falcon-api-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200006,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 SQS Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.errors{span.kind:consumer,$env,service:falcon-api-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200007,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ SQS Latency p90",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p90",
+                      "data_source": "metrics",
+                      "query": "p90:trace.aws.http{span.kind:consumer,$env,service:falcon-api-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p90 * 1000",
+                      "alias": "p90 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1000",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "5000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200008,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS by Queue",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_by_queue",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:falcon-api-service} by {resource_name}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 9,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 11,
+        "width": 12,
+        "height": 5
+      }
+    },
+    {
+      "id": 2001,
+      "definition": {
+        "type": "group",
+        "title": "🔷 app-server-internal-service",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 200101,
+            "definition": {
+              "type": "timeseries",
+              "title": "🌐 HTTP Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits{$env,service:app-server-internal-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Requests/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200102,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 HTTP Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits.by_http_status{$env,service:app-server-internal-service,!http.status_class:2xx}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200103,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ HTTP Latency p95",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "p95:trace.http.request{$env,service:app-server-internal-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "p95 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "500",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "2000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200104,
+            "definition": {
+              "type": "timeseries",
+              "title": "📊 HTTP Apdex",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "apdex",
+                      "data_source": "metrics",
+                      "query": "avg:trace.http.request.apdex{$env,service:app-server-internal-service}"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Apdex",
+                "scale": "linear",
+                "min": "0",
+                "max": "1"
+              },
+              "markers": [
+                {
+                  "value": "0.8",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "0.5",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 9,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200105,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:app-server-internal-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200106,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 SQS Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.errors{span.kind:consumer,$env,service:app-server-internal-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200107,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ SQS Latency p90",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p90",
+                      "data_source": "metrics",
+                      "query": "p90:trace.aws.http{span.kind:consumer,$env,service:app-server-internal-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p90 * 1000",
+                      "alias": "p90 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1000",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "5000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200108,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS by Queue",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_by_queue",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:app-server-internal-service} by {resource_name}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 9,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 17,
+        "width": 12,
+        "height": 5
+      }
+    },
+    {
+      "id": 2002,
+      "definition": {
+        "type": "group",
+        "title": "🔷 app-server-service",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 200201,
+            "definition": {
+              "type": "timeseries",
+              "title": "🌐 HTTP Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits{$env,service:app-server-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Requests/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200202,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 HTTP Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits.by_http_status{$env,service:app-server-service,!http.status_class:2xx}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200203,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ HTTP Latency p95",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "p95:trace.http.request{$env,service:app-server-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "p95 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "500",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "2000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200204,
+            "definition": {
+              "type": "timeseries",
+              "title": "📊 HTTP Apdex",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "apdex",
+                      "data_source": "metrics",
+                      "query": "avg:trace.http.request.apdex{$env,service:app-server-service}"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Apdex",
+                "scale": "linear",
+                "min": "0",
+                "max": "1"
+              },
+              "markers": [
+                {
+                  "value": "0.8",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "0.5",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 9,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200205,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:app-server-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200206,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 SQS Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.errors{span.kind:consumer,$env,service:app-server-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200207,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ SQS Latency p90",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p90",
+                      "data_source": "metrics",
+                      "query": "p90:trace.aws.http{span.kind:consumer,$env,service:app-server-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p90 * 1000",
+                      "alias": "p90 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1000",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "5000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200208,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS by Queue",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_by_queue",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:app-server-service} by {resource_name}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 9,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 23,
+        "width": 12,
+        "height": 5
+      }
+    },
+    {
+      "id": 2003,
+      "definition": {
+        "type": "group",
+        "title": "🔷 fx-api-service",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 200301,
+            "definition": {
+              "type": "timeseries",
+              "title": "🌐 HTTP Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits{$env,service:fx-api-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Requests/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200302,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 HTTP Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits.by_http_status{$env,service:fx-api-service,!http.status_class:2xx}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200303,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ HTTP Latency p95",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "p95:trace.http.request{$env,service:fx-api-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "p95 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "500",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "2000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200304,
+            "definition": {
+              "type": "timeseries",
+              "title": "📊 HTTP Apdex",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "apdex",
+                      "data_source": "metrics",
+                      "query": "avg:trace.http.request.apdex{$env,service:fx-api-service}"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Apdex",
+                "scale": "linear",
+                "min": "0",
+                "max": "1"
+              },
+              "markers": [
+                {
+                  "value": "0.8",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "0.5",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 9,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200305,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:fx-api-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200306,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 SQS Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.errors{span.kind:consumer,$env,service:fx-api-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200307,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ SQS Latency p90",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p90",
+                      "data_source": "metrics",
+                      "query": "p90:trace.aws.http{span.kind:consumer,$env,service:fx-api-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p90 * 1000",
+                      "alias": "p90 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1000",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "5000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200308,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS by Queue",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_by_queue",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:fx-api-service} by {resource_name}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 9,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 29,
+        "width": 12,
+        "height": 5
+      }
+    },
+    {
+      "id": 2004,
+      "definition": {
+        "type": "group",
+        "title": "🔷 goblin-service",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 200401,
+            "definition": {
+              "type": "timeseries",
+              "title": "🌐 HTTP Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits{$env,service:goblin-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Requests/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200402,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 HTTP Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits.by_http_status{$env,service:goblin-service,!http.status_class:2xx}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200403,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ HTTP Latency p95",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "p95:trace.http.request{$env,service:goblin-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "p95 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "500",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "2000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200404,
+            "definition": {
+              "type": "timeseries",
+              "title": "📊 HTTP Apdex",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "apdex",
+                      "data_source": "metrics",
+                      "query": "avg:trace.http.request.apdex{$env,service:goblin-service}"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Apdex",
+                "scale": "linear",
+                "min": "0",
+                "max": "1"
+              },
+              "markers": [
+                {
+                  "value": "0.8",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "0.5",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 9,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200405,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:goblin-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200406,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 SQS Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.errors{span.kind:consumer,$env,service:goblin-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200407,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ SQS Latency p90",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p90",
+                      "data_source": "metrics",
+                      "query": "p90:trace.aws.http{span.kind:consumer,$env,service:goblin-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p90 * 1000",
+                      "alias": "p90 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1000",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "5000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200408,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS by Queue",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_by_queue",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:goblin-service} by {resource_name}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 9,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 35,
+        "width": 12,
+        "height": 5
+      }
+    },
+    {
+      "id": 2005,
+      "definition": {
+        "type": "group",
+        "title": "🔷 goms-service",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 200501,
+            "definition": {
+              "type": "timeseries",
+              "title": "🌐 HTTP Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits{$env,service:goms-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Requests/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200502,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 HTTP Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits.by_http_status{$env,service:goms-service,!http.status_class:2xx}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200503,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ HTTP Latency p95",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "p95:trace.http.request{$env,service:goms-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "p95 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "500",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "2000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200504,
+            "definition": {
+              "type": "timeseries",
+              "title": "📊 HTTP Apdex",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "apdex",
+                      "data_source": "metrics",
+                      "query": "avg:trace.http.request.apdex{$env,service:goms-service}"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Apdex",
+                "scale": "linear",
+                "min": "0",
+                "max": "1"
+              },
+              "markers": [
+                {
+                  "value": "0.8",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "0.5",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 9,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200505,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:goms-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200506,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 SQS Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.errors{span.kind:consumer,$env,service:goms-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200507,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ SQS Latency p90",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p90",
+                      "data_source": "metrics",
+                      "query": "p90:trace.aws.http{span.kind:consumer,$env,service:goms-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p90 * 1000",
+                      "alias": "p90 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1000",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "5000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200508,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS by Queue",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_by_queue",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:goms-service} by {resource_name}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 9,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 41,
+        "width": 12,
+        "height": 5
+      }
+    },
+    {
+      "id": 2006,
+      "definition": {
+        "type": "group",
+        "title": "🔷 recon-service",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 200601,
+            "definition": {
+              "type": "timeseries",
+              "title": "🌐 HTTP Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits{$env,service:recon-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Requests/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200602,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 HTTP Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits.by_http_status{$env,service:recon-service,!http.status_class:2xx}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200603,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ HTTP Latency p95",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "p95:trace.http.request{$env,service:recon-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "p95 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "500",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "2000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200604,
+            "definition": {
+              "type": "timeseries",
+              "title": "📊 HTTP Apdex",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "apdex",
+                      "data_source": "metrics",
+                      "query": "avg:trace.http.request.apdex{$env,service:recon-service}"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Apdex",
+                "scale": "linear",
+                "min": "0",
+                "max": "1"
+              },
+              "markers": [
+                {
+                  "value": "0.8",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "0.5",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 9,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200605,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:recon-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200606,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 SQS Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.errors{span.kind:consumer,$env,service:recon-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200607,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ SQS Latency p90",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p90",
+                      "data_source": "metrics",
+                      "query": "p90:trace.aws.http{span.kind:consumer,$env,service:recon-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p90 * 1000",
+                      "alias": "p90 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1000",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "5000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200608,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS by Queue",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_by_queue",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:recon-service} by {resource_name}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 9,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 47,
+        "width": 12,
+        "height": 5
+      }
+    },
+    {
+      "id": 2007,
+      "definition": {
+        "type": "group",
+        "title": "🔷 rewards-api-service",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 200701,
+            "definition": {
+              "type": "timeseries",
+              "title": "🌐 HTTP Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits{$env,service:rewards-api-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Requests/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200702,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 HTTP Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits.by_http_status{$env,service:rewards-api-service,!http.status_class:2xx}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200703,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ HTTP Latency p95",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "p95:trace.http.request{$env,service:rewards-api-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "p95 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "500",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "2000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200704,
+            "definition": {
+              "type": "timeseries",
+              "title": "📊 HTTP Apdex",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "apdex",
+                      "data_source": "metrics",
+                      "query": "avg:trace.http.request.apdex{$env,service:rewards-api-service}"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Apdex",
+                "scale": "linear",
+                "min": "0",
+                "max": "1"
+              },
+              "markers": [
+                {
+                  "value": "0.8",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "0.5",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 9,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200705,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:rewards-api-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200706,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 SQS Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.errors{span.kind:consumer,$env,service:rewards-api-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200707,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ SQS Latency p90",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p90",
+                      "data_source": "metrics",
+                      "query": "p90:trace.aws.http{span.kind:consumer,$env,service:rewards-api-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p90 * 1000",
+                      "alias": "p90 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1000",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "5000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200708,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS by Queue",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_by_queue",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:rewards-api-service} by {resource_name}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 9,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 53,
+        "width": 12,
+        "height": 5
+      }
+    },
+    {
+      "id": 2008,
+      "definition": {
+        "type": "group",
+        "title": "🔷 user-vault-service",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 200801,
+            "definition": {
+              "type": "timeseries",
+              "title": "🌐 HTTP Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits{$env,service:user-vault-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Requests/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200802,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 HTTP Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits.by_http_status{$env,service:user-vault-service,!http.status_class:2xx}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200803,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ HTTP Latency p95",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "p95:trace.http.request{$env,service:user-vault-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "p95 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "500",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "2000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200804,
+            "definition": {
+              "type": "timeseries",
+              "title": "📊 HTTP Apdex",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "apdex",
+                      "data_source": "metrics",
+                      "query": "avg:trace.http.request.apdex{$env,service:user-vault-service}"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Apdex",
+                "scale": "linear",
+                "min": "0",
+                "max": "1"
+              },
+              "markers": [
+                {
+                  "value": "0.8",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "0.5",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 9,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200805,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS Request Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:user-vault-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200806,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 SQS Error Rate",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.errors{span.kind:consumer,$env,service:user-vault-service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200807,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ SQS Latency p90",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": false,
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p90",
+                      "data_source": "metrics",
+                      "query": "p90:trace.aws.http{span.kind:consumer,$env,service:user-vault-service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p90 * 1000",
+                      "alias": "p90 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1000",
+                  "display_type": "warning dashed",
+                  "label": "Warning"
+                },
+                {
+                  "value": "5000",
+                  "display_type": "error solid",
+                  "label": "Critical"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "id": 200808,
+            "definition": {
+              "type": "timeseries",
+              "title": "📬 SQS by Queue",
+              "title_size": "14",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": [
+                "value",
+                "avg",
+                "sum"
+              ],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "sqs_by_queue",
+                      "data_source": "metrics",
+                      "query": "sum:trace.aws.http.hits{span.kind:consumer,$env,service:user-vault-service} by {resource_name}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Messages/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 9,
+              "y": 2,
+              "width": 3,
+              "height": 2
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 59,
+        "width": 12,
+        "height": 5
+      }
+    }
+  ],
+  "notify_list": [],
+  "reflow_type": "fixed"
+}

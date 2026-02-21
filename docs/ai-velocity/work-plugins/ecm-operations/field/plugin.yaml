@@ -1,0 +1,64 @@
+name: ecm-field-agent
+version: 3.0.0
+description: ECM Field Agent — ticket work, diagnosis, resolution, escalation
+
+triggers:
+  # Agent queue
+  - pattern: "my tickets"
+    skill: my-tickets
+  - pattern: "my queue"
+    skill: my-tickets
+  - pattern: "what should I work on"
+    skill: my-tickets
+  - pattern: "next task"
+    skill: my-tickets
+
+  # Order diagnosis
+  - pattern: "order {order_id}"
+    skill: order-details
+  - pattern: "lookup {order_id}"
+    skill: order-details
+
+  # Resolution
+  - pattern: "resolve {order_id} {notes}"
+    skill: resolve-ticket
+  - pattern: "fixed {order_id} {notes}"
+    skill: resolve-ticket
+  - pattern: "done {order_id} {notes}"
+    skill: resolve-ticket
+
+  # Escalation
+  - pattern: "stuck {order_id} {reason}"
+    skill: escalate-ticket
+  - pattern: "escalate {order_id} {reason}"
+    skill: escalate-ticket
+
+data_sources:
+  - name: redshift
+    database: dev
+    schema: public
+    mcp_server: ecm-gateway
+
+  - name: google-sheets
+    type: google-sheets
+    mcp_server: ecm-gateway
+
+queries:
+  order_detail_v2: ../shared/queries/ecm-order-detail-v2.sql
+  my_tickets: ../shared/queries/my-tickets.sql
+
+config:
+  diagnosis_mapping: ../shared/config/diagnosis-mapping.yaml
+  spreadsheet_id: "1r50OEZlFVSUmU1tkLBqx2_BzlilZ3s0pArNHV83tRks"
+
+guardrails: ../shared/guardrails.md
+
+resources:
+  - skills/*.md
+  - ../shared/runbooks/*.md
+  - ../shared/queries/*.sql
+  - ../shared/config/*.yaml
+  - ../shared/config/*.md
+  - ../shared/stuck-reasons.yaml
+  - ../ESCALATION.md
+  - AGENTS.md

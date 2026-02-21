@@ -1,0 +1,13 @@
+{
+  "name": "ecm-field-bot",
+  "version": "1.0.0",
+  "description": "ECM Field Agent Slack bot — order lookup, tickets, resolve, escalate via claude --print",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "@slack/bolt": "^4.1.0",
+    "dotenv": "^17.3.1"
+  }
+}

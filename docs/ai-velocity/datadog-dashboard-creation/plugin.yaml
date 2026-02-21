@@ -1,0 +1,77 @@
+name: datadog-dashboard-creation
+version: 3.0.0
+description: >
+  Create production-grade Datadog dashboards following Google SRE Four Golden Signals
+  and RED method. Uses Datadog REST API via curl for dashboard operations.
+
+# Skill triggers (phrases that activate skills)
+triggers:
+  # Dashboard creation
+  - pattern: "create dashboard"
+    skill: creating-datadog-dashboards
+  - pattern: "build dashboard"
+    skill: creating-datadog-dashboards
+  - pattern: "generate dashboard"
+    skill: creating-datadog-dashboards
+  - pattern: "visualize metrics"
+    skill: creating-datadog-dashboards
+  - pattern: "observability dashboard"
+    skill: creating-datadog-dashboards
+
+  # Metric discovery
+  - pattern: "discover metrics"
+    skill: discovering-metrics
+  - pattern: "find metrics"
+    skill: discovering-metrics
+  - pattern: "what metrics exist"
+    skill: discovering-metrics
+  - pattern: "list metrics"
+    skill: discovering-metrics
+
+  # Dashboard management
+  - pattern: "list dashboards"
+    skill: managing-dashboards
+  - pattern: "show dashboards"
+    skill: managing-dashboards
+  - pattern: "update dashboard"
+    skill: managing-dashboards
+  - pattern: "validate dashboard"
+    skill: managing-dashboards
+
+# Required environment variables (loaded from .env)
+env_vars:
+  - DATADOG_API_KEY   # Organization Settings → API Keys
+  - DATADOG_APP_KEY   # Organization Settings → Application Keys
+  - DATADOG_SITE      # datadoghq.com (US) or datadoghq.eu (EU)
+
+# API endpoints
+api:
+  base_url: "https://api.${DATADOG_SITE}"
+  endpoints:
+    create_dashboard: POST /api/v1/dashboard
+    get_dashboard: GET /api/v1/dashboard/{id}
+    update_dashboard: PUT /api/v1/dashboard/{id}
+    delete_dashboard: DELETE /api/v1/dashboard/{id}
+    list_dashboards: GET /api/v1/dashboard
+    query_metrics: GET /api/v1/query
+
+# Default configuration
+config:
+  slo_thresholds:
+    error_rate_warning: 1
+    error_rate_critical: 5
+    latency_p95_warning_ms: 100
+    latency_p95_critical_ms: 500
+    cpu_warning: 70
+    cpu_critical: 90
+    memory_warning: 80
+    memory_critical: 90
+
+# Guardrails reference
+guardrails: skills/guardrails.md
+
+# Resources to load
+resources:
+  - SKILL.md
+  - skills/*.md
+  - examples/*.json

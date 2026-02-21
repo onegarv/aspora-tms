@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ecm-gateway": {
+      "type": "http",
+      "url": "http://internal-ecm-gateway-svc-464678860.eu-west-2.elb.amazonaws.com:80/mcp"
+    }
+  }
+  
+}

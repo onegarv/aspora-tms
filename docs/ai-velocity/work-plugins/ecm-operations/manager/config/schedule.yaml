@@ -1,0 +1,73 @@
+# ECM Triage Schedule Configuration
+# Used by K8s CronJob and Manager agent
+
+schedule:
+  timezone: "Asia/Dubai"  # UAE time
+  runs:
+    - name: morning
+      cron: "0 7 * * *"      # 7:00 AM UAE
+      cron_utc: "0 3 * * *"  # 3:00 AM UTC
+      description: "Morning triage - overnight stuck orders"
+
+    - name: morning_patterns
+      cron: "30 7 * * *"      # 7:30 AM IST (= 7:00 AM IST accounting for triage first)
+      cron_utc: "0 2 * * *"   # 2:00 AM UTC (= 7:30 AM IST)
+      timezone: "Asia/Kolkata" # IST — runs after morning triage
+      command: patterns
+      description: "Daily pattern intelligence - surface systemic failure clusters"
+
+    - name: afternoon
+      cron: "0 14 * * *"     # 2:00 PM UAE
+      cron_utc: "0 10 * * *" # 10:00 AM UTC
+      description: "Midday refresh - re-prioritize, handle escalations"
+
+    - name: evening
+      cron: "0 20 * * *"     # 8:00 PM UAE
+      cron_utc: "0 16 * * *" # 4:00 PM UTC
+      description: "Evening summary - overnight handoff"
+
+# Slack configuration
+slack:
+  channel: "#wg-asap-agent-pilot"
+  channel_id: "C0AD6C36LVC"
+  bot_token_env: "SLACK_BOT_TOKEN"
+  use_threading: true  # Post high-value tickets in thread
+  mentions:
+    critical: ["@ops-lead"]
+    escalation: ["@channel"]
+
+# Google Sheets
+sheets:
+  spreadsheet_id: "1r50OEZlFVSUmU1tkLBqx2_BzlilZ3s0pArNHV83tRks"
+  tabs:
+    assignments: "Assignments"
+    agents: "Agents"
+    dashboard: "ECM Dashboard"
+    resolutions: "Resolutions"
+    escalations: "Escalations"
+    pattern_intelligence: "Pattern Intelligence"
+
+# Query settings
+query:
+  time_range_days: 30
+  min_age_hours: 12
+  batch_size: 10
+  timeout_seconds: 30
+
+# Priority thresholds
+priority:
+  p1_threshold: 0.7
+  p2_threshold: 0.5
+  p3_threshold: 0.3
+
+# High-value assignment settings
+assignment:
+  high_value_threshold: 5000  # Orders >= this amount get round-robin distribution
+  distribution: "round_robin"  # Ensures even spread across agents
+
+# Disqualification rules
+disqualify:
+  stale_uncategorized_days: 30
+  abandoned_payment_statuses:
+    - CREATED
+    - INITIATED

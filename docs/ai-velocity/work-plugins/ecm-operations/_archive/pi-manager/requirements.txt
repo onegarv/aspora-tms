@@ -1,0 +1,12 @@
+# ECM Pi Manager Dependencies
+# Direct database/API access for K8s deployment (no MCP dependency)
+
+# Redshift connection
+redshift-connector>=2.0.0
+
+# Google Sheets API
+google-auth>=2.0.0
+google-api-python-client>=2.0.0
+
+# Slack SDK (optional, can use urllib)
+# slack-sdk>=3.0.0

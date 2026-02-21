@@ -1,0 +1,50 @@
+{
+  "family": "ecm-manager",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecm-triage-task-role",
+  "containerDefinitions": [
+    {
+      "name": "ecm-manager",
+      "image": "${ECR_REPO}/ecm-manager:latest",
+      "essential": true,
+      "command": ["triage"],
+      "environment": [
+        {"name": "SPREADSHEET_ID", "value": "1r50OEZlFVSUmU1tkLBqx2_BzlilZ3s0pArNHV83tRks"},
+        {"name": "SLACK_CHANNEL_ID", "value": "C0AD6C36LVC"}
+      ],
+      "secrets": [
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:ecm-triage/anthropic-api-key"
+        },
+        {
+          "name": "SLACK_BOT_TOKEN",
+          "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:ecm-triage/slack-bot-token"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ecm-manager",
+          "awslogs-region": "${AWS_REGION}",
+          "awslogs-stream-prefix": "manager"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "./entrypoint.sh health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 10
+      }
+    }
+  ],
+  "tags": [
+    {"key": "Project", "value": "ecm-operations"},
+    {"key": "Component", "value": "manager-agent"}
+  ]
+}
