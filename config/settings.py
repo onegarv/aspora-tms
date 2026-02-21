@@ -72,6 +72,11 @@ class Settings(BaseSettings):
     fx_band_rate_strategy: str = "worst_case"       # "worst_case" | "midpoint" | "spot"
     holiday_prefund_lookahead_days: int = 3          # days ahead to scan for non-business-day stretches
 
+    # ── Google Sheets — nostro balance sync ───────────────────────────────
+    sheets_balance_id:   str = "1JujicqspxgKMhEh27LTT8EtwcuN1zj1hx8JO0JqTQ5g"
+    sheets_balance_gid:  str = "884482023"
+    sheets_balance_rows: str = "185,186,187,188"  # comma-separated, 1-indexed
+
     # ── Alerting ──────────────────────────────────────────────────────────
     alert_email: str = "treasury@aspora.com"
     slack_webhook_url: str = ""

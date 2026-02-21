@@ -83,15 +83,21 @@ def _build_services():
     from agents.operations.maker_checker import MakerCheckerWorkflow
     from agents.operations.window_manager import WindowManager
     from services.calendar_service import CalendarService
+    from services.sheets_balance_sync import fetch_nostro_balances
+    from config.settings import settings
 
     calendar = CalendarService()
 
-    # Balance tracker — seeded with dev-safe starting balances
-    tracker = BalanceTracker({
-        "USD": Decimal("10_000_000"),
-        "GBP": Decimal("5_000_000"),
-        "AED": Decimal("2_000_000"),
-    })
+    # ── Seed nostro balances from Google Sheets (falls back to hardcoded) ──
+    _row_numbers = [int(r) for r in settings.sheets_balance_rows.split(",")]
+    initial_balances = fetch_nostro_balances(
+        sheet_id=settings.sheets_balance_id,
+        gid=settings.sheets_balance_gid,
+        row_numbers=_row_numbers,
+    )
+    log.info("nostro balances loaded from sheets", currencies=list(initial_balances.keys()))
+
+    tracker = BalanceTracker(initial_balances)
     fund_mover = FundMover(MockBankAPI(), InMemoryExecutionStore(), tracker)
 
     class _StubDB:
@@ -168,6 +174,27 @@ async def main() -> None:
         minute=30,
         id="fx_analyst_daily",
         name="FXAnalystAgent daily market brief",
+    )
+
+    from services.sheets_balance_sync import fetch_nostro_balances
+    from config.settings import settings
+
+    async def _refresh_balances() -> None:
+        balances = fetch_nostro_balances(
+            sheet_id=settings.sheets_balance_id,
+            gid=settings.sheets_balance_gid,
+            row_numbers=[int(r) for r in settings.sheets_balance_rows.split(",")],
+        )
+        await fund_mover._tracker.refresh(balances)
+        log.info("nostro balances refreshed from sheets", currencies=list(balances.keys()))
+
+    scheduler.add_job(
+        _refresh_balances,
+        trigger="cron",
+        hour=0,
+        minute=30,
+        id="balance_refresh",
+        name="Nostro balance sync from Google Sheets",
     )
     scheduler.start()
     log.info("scheduler started", cron="00:30 UTC (06:00 IST)")
