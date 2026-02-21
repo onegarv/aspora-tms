@@ -121,9 +121,11 @@ async def main() -> None:
     calendar, fund_mover, maker_checker, window_manager = _build_services()
 
     # ── Build agents ──────────────────────────────────────────────────────────
+    from agents.fx_analyst.agent import FXAnalystAgent
     from agents.liquidity.agent import LiquidityAgent
     from agents.operations.agent import OperationsAgent
 
+    fx_analyst = FXAnalystAgent(bus=bus)
     liquidity_agent = LiquidityAgent(bus=bus, calendar=calendar)
     ops_agent = OperationsAgent(
         bus=bus,
@@ -134,9 +136,10 @@ async def main() -> None:
     )
 
     # ── Start agents (registers event handlers) ───────────────────────────────
+    await fx_analyst.start()
     await liquidity_agent.start()
     await ops_agent.start()
-    log.info("agents started", agents=["liquidity", "operations"])
+    log.info("agents started", agents=["fx_analyst", "liquidity", "operations"])
 
     # ── Scheduler: 06:00 IST = 00:30 UTC ─────────────────────────────────────
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -157,6 +160,14 @@ async def main() -> None:
         minute=30,
         id="ops_daily",
         name="OperationsAgent daily run",
+    )
+    scheduler.add_job(
+        fx_analyst.run_daily,
+        trigger="cron",
+        hour=3,
+        minute=30,
+        id="fx_analyst_daily",
+        name="FXAnalystAgent daily market brief",
     )
     scheduler.start()
     log.info("scheduler started", cron="00:30 UTC (06:00 IST)")

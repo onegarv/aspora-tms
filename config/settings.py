@@ -68,6 +68,10 @@ class Settings(BaseSettings):
     forecast_lookback_weeks: int = 8
     max_total_multiplier: float = 2.5
 
+    # ── FX Band integration ────────────────────────────────────────────
+    fx_band_rate_strategy: str = "worst_case"       # "worst_case" | "midpoint" | "spot"
+    holiday_prefund_lookahead_days: int = 3          # days ahead to scan for non-business-day stretches
+
     # ── Alerting ──────────────────────────────────────────────────────────
     alert_email: str = "treasury@aspora.com"
     slack_webhook_url: str = ""

@@ -87,6 +87,9 @@ class RDAShortfall:
     shortfall: float
     severity: ShortfallSeverity
     detected_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    holiday_prefunding: bool = False
+    covers_dates: list[str] = field(default_factory=list)
+    urgency: str = ""
 
 
 # ── FX / Deal models ───────────────────────────────────────────────────────────
@@ -104,7 +107,7 @@ class DealInstruction:
     time_window_end: datetime
     tranche_number: int
     total_tranches: int
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass
@@ -185,7 +188,7 @@ class WindowClosingAlert:
     rail: str
     minutes_remaining: int
     close_time_utc: datetime
-    generated_at: datetime = field(default_factory=datetime.utcnow)
+    generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass
@@ -205,4 +208,4 @@ class FundMovementStatus:
     status: ProposalStatus
     rail: str
     settlement_ref: Optional[str] = None
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

@@ -30,9 +30,11 @@ from typing import TYPE_CHECKING, Any
 from agents.base import BaseAgent
 from agents.liquidity.forecaster import VolumeForecaster
 from agents.liquidity.multipliers import MultiplierEngine
+from agents.liquidity.rate_resolver import RateResolver
 from agents.liquidity.rda_checker import RDAChecker
 from bus.events import (
     FORECAST_READY,
+    MARKET_BRIEF,
     NOSTRO_BALANCE_UPDATE,
     REFORECAST_TRIGGER,
     SHORTFALL_ALERT,
@@ -77,10 +79,12 @@ class LiquidityAgent(BaseAgent):
 
         self._spot_rates:      dict[str, float]  = dict(_FALLBACK_RATES)
         self._nostro_balances: dict[str, float]  = {}
+        self._fx_band: dict[str, Any] | None = None
 
         self._forecaster       = VolumeForecaster(lookback_weeks=self.config.forecast_lookback_weeks)
         self._multiplier_engine = MultiplierEngine()
         self._rda_checker      = RDAChecker()
+        self._rate_resolver    = RateResolver()
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -88,6 +92,7 @@ class LiquidityAgent(BaseAgent):
         """Register event listeners and do initial Metabase data load."""
         await self.listen(REFORECAST_TRIGGER,    self._handle_reforecast)
         await self.listen(NOSTRO_BALANCE_UPDATE, self._handle_nostro_update)
+        await self.listen(MARKET_BRIEF,          self._handle_market_brief)
 
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._load_market_data)
@@ -122,8 +127,11 @@ class LiquidityAgent(BaseAgent):
             for corridor, vol in forecast_usd.items()
         }
 
-        # ── 4. Aggregate to INR crores ────────────────────────────────────────
-        usd_inr = self._spot_rates.get("USD_INR", 84.0)
+        # ── 4. Resolve effective rates using FX band strategy ─────────────────
+        effective_rates = self._rate_resolver.resolve(
+            self._spot_rates, self._fx_band, self.config.fx_band_rate_strategy,
+        )
+        usd_inr = effective_rates.get("USD_INR", 84.0)
         currency_split: dict[str, float] = {}
         for corridor, vol_usd in adjusted_usd.items():
             ccy              = corridor.split("_")[0]          # "AED_INR" → "AED"
@@ -159,7 +167,7 @@ class LiquidityAgent(BaseAgent):
         shortfalls = self._rda_checker.check(
             forecast_usd=adjusted_usd,
             nostro_balances=self._nostro_balances,
-            rates=self._spot_rates,
+            rates=effective_rates,
             buffer_pct=self.config.prefunding_buffer_pct,
         )
         for sf in shortfalls:
@@ -179,6 +187,11 @@ class LiquidityAgent(BaseAgent):
                 "SHORTFALL_ALERT  currency=%s severity=%s shortfall=%.2f",
                 sf.currency, sf.severity.value, sf.shortfall,
             )
+
+        # ── 7. Holiday-aware prefunding check ──────────────────────────────────
+        await self._check_holiday_prefunding(
+            today, forecast_usd, effective_rates, correlation_id,
+        )
 
     # ── Event handlers ────────────────────────────────────────────────────────
 
@@ -218,6 +231,102 @@ class LiquidityAgent(BaseAgent):
             "Nostro balances updated: %s",
             {k: round(v, 0) for k, v in self._nostro_balances.items()},
         )
+
+    async def _handle_market_brief(self, event: Event) -> None:
+        """Cache the latest FX band data from the FX Analyst Agent."""
+        p = event.payload
+        self._fx_band = {
+            "range_low":      p.get("range_low"),
+            "range_high":     p.get("range_high"),
+            "direction":      p.get("direction"),
+            "confidence_pct": p.get("confidence_pct"),
+            "current_rate":   p.get("current_rate"),
+        }
+        self.logger.info(
+            "FX band cached: low=%s high=%s direction=%s",
+            self._fx_band.get("range_low"),
+            self._fx_band.get("range_high"),
+            self._fx_band.get("direction"),
+        )
+
+    async def _check_holiday_prefunding(
+        self,
+        today: date,
+        forecast_usd: dict[str, float],
+        effective_rates: dict[str, float],
+        correlation_id: str,
+    ) -> None:
+        """
+        Look ahead for consecutive non-business days starting tomorrow.
+        If found, aggregate raw (un-multiplied) forecast volumes for those days
+        and emit SHORTFALL_ALERT with holiday prefunding metadata.
+
+        Uses raw forecast_usd (before multiplier application) to avoid
+        double-counting with the 1.2× day-before-holiday multiplier already
+        applied in step 3.
+        """
+        from datetime import timedelta
+        from services.calendar_service import IN_RBI_FX
+
+        tomorrow = today + timedelta(days=1)
+        closed_days = self.calendar.consecutive_non_business_days(tomorrow, IN_RBI_FX)
+
+        if closed_days <= 0:
+            return
+
+        cap = self.config.holiday_prefund_lookahead_days
+        effective_closed = min(closed_days, cap) if cap > 0 else closed_days
+
+        covers_dates: list[str] = [
+            (tomorrow + timedelta(days=i)).isoformat()
+            for i in range(effective_closed)
+        ]
+
+        # Aggregate: multiply raw daily forecast by closed-day count
+        aggregated_usd: dict[str, float] = {
+            corridor: round(vol * effective_closed, 2)
+            for corridor, vol in forecast_usd.items()
+        }
+
+        self.logger.info(
+            "Holiday prefunding: %d closed days starting %s, covers=%s",
+            effective_closed, tomorrow.isoformat(), covers_dates,
+        )
+
+        if not self._nostro_balances:
+            return
+
+        holiday_shortfalls = self._rda_checker.check(
+            forecast_usd=aggregated_usd,
+            nostro_balances=self._nostro_balances,
+            rates=effective_rates,
+            buffer_pct=self.config.prefunding_buffer_pct,
+        )
+
+        urgency = "high" if effective_closed >= 3 else "medium"
+
+        for sf in holiday_shortfalls:
+            await self.emit(
+                SHORTFALL_ALERT,
+                {
+                    "currency":          sf.currency,
+                    "required_amount":   sf.required_amount,
+                    "available_balance": sf.available_balance,
+                    "shortfall":         sf.shortfall,
+                    "severity":          sf.severity.value,
+                    "detected_at":       datetime.now(timezone.utc).isoformat(),
+                    "holiday_prefunding": True,
+                    "covers_dates":      covers_dates,
+                    "urgency":           urgency,
+                    "closed_days":       effective_closed,
+                },
+                correlation_id=correlation_id,
+            )
+            self.logger.warning(
+                "SHORTFALL_ALERT (holiday prefunding)  currency=%s severity=%s "
+                "shortfall=%.2f covers=%s urgency=%s",
+                sf.currency, sf.severity.value, sf.shortfall, covers_dates, urgency,
+            )
 
     # ── Internal helpers ──────────────────────────────────────────────────────
 

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, TYPE_CHECKING
 
 from bus.base import EventBus
@@ -80,7 +80,7 @@ class MakerCheckerWorkflow:
             proposal.status           = ProposalStatus.REJECTED
             proposal.rejection_reason = "; ".join(errors)
             proposal.validation_errors = errors
-            proposal.updated_at       = datetime.utcnow()
+            proposal.updated_at       = datetime.now(timezone.utc)
             await self.db.save(proposal)
             await self.audit.log(
                 event_type="proposal.rejected",
@@ -95,7 +95,7 @@ class MakerCheckerWorkflow:
             return {"status": "rejected", "proposal_id": proposal.id, "errors": errors}
 
         proposal.status     = ProposalStatus.PENDING_APPROVAL
-        proposal.updated_at = datetime.utcnow()
+        proposal.updated_at = datetime.now(timezone.utc)
         await self.db.save(proposal)
 
         required_approvers = 2 if proposal.requires_dual_approval else 1
@@ -168,7 +168,7 @@ class MakerCheckerWorkflow:
         else:
             raise ValueError("Proposal already has sufficient approvals")
 
-        proposal.updated_at = datetime.utcnow()
+        proposal.updated_at = datetime.now(timezone.utc)
         await self.db.save(proposal)
 
         await self.audit.log(
@@ -217,7 +217,7 @@ class MakerCheckerWorkflow:
         proposal.status           = ProposalStatus.REJECTED
         proposal.rejected_by      = checker_id
         proposal.rejection_reason = reason
-        proposal.updated_at       = datetime.utcnow()
+        proposal.updated_at       = datetime.now(timezone.utc)
         await self.db.save(proposal)
 
         await self.audit.log(
@@ -271,8 +271,8 @@ class MakerCheckerWorkflow:
         has happened yet. EXECUTED is set by OpsAgent after FundMover confirms.
         """
         proposal.status     = ProposalStatus.APPROVED
-        proposal.executed_at = datetime.utcnow()
-        proposal.updated_at  = datetime.utcnow()
+        proposal.executed_at = datetime.now(timezone.utc)
+        proposal.updated_at  = datetime.now(timezone.utc)
         await self.db.save(proposal)
 
         await self.alerts.notify_executed(proposal)
