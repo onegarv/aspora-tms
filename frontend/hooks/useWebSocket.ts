@@ -5,16 +5,18 @@ import { useTmsStore } from "@/store"
 import type { LiveEvent } from "@/lib/types"
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true"
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000/ws"
+
+// SSE endpoint — no auth header needed (EventSource limitation)
+// Falls back to empty on server render (SSR has no window)
+const SSE_URL = "/api/v1/events/stream"
 
 export function useWebSocket() {
   const { setWsStatus, appendEvent } = useTmsStore()
-  const wsRef = useRef<WebSocket | null>(null)
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const esRef = useRef<EventSource | null>(null)
 
   useEffect(() => {
     if (USE_MOCK) {
-      // In mock mode, simulate a connected WS and replay mock events
+      // In mock mode, simulate a connected stream (no real connection)
       setWsStatus("connected")
       return
     }
@@ -22,14 +24,14 @@ export function useWebSocket() {
     function connect() {
       setWsStatus("connecting")
 
-      const ws = new WebSocket(WS_URL)
-      wsRef.current = ws
+      const es = new EventSource(SSE_URL)
+      esRef.current = es
 
-      ws.onopen = () => {
+      es.onopen = () => {
         setWsStatus("connected")
       }
 
-      ws.onmessage = (event) => {
+      es.onmessage = (event) => {
         try {
           const parsed = JSON.parse(event.data as string) as LiveEvent
           appendEvent(parsed)
@@ -38,26 +40,19 @@ export function useWebSocket() {
         }
       }
 
-      ws.onerror = () => {
+      es.onerror = () => {
+        // EventSource auto-reconnects — just surface the error state briefly
         setWsStatus("error")
-      }
-
-      ws.onclose = () => {
-        setWsStatus("disconnected")
-        // Reconnect after 5 s
-        reconnectTimeoutRef.current = setTimeout(connect, 5_000)
+        // The browser will reconnect automatically; status will flip to "connected" on reconnect
       }
     }
 
     connect()
 
     return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current)
-      }
-      if (wsRef.current) {
-        wsRef.current.onclose = null // prevent reconnect on unmount
-        wsRef.current.close()
+      if (esRef.current) {
+        esRef.current.close()
+        esRef.current = null
       }
       setWsStatus("disconnected")
     }

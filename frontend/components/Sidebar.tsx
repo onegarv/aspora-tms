@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils"
 import { useTmsStore } from "@/store"
 import type { WsStatus } from "@/store"
+import { useWebSocket } from "@/hooks/useWebSocket"
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -42,6 +43,7 @@ function WsIndicator({ status }: { status: WsStatus }) {
 export function Sidebar() {
   const pathname = usePathname()
   const { wsStatus, currentUser } = useTmsStore()
+  useWebSocket() // establish SSE connection; sets wsStatus in global store
 
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href
