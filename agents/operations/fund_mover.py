@@ -326,6 +326,15 @@ class BalanceTracker:
             )
             self._reserved[currency] = max(Decimal(0), self._reserved[currency] - amount)
 
+    async def refresh(self, new_balances: dict[str, Decimal]) -> None:
+        """Replace tracked balances with fresh values (e.g. from Google Sheets).
+
+        Reserved amounts are intentionally preserved — pending transfers remain valid.
+        """
+        async with self._lock:
+            for ccy, amount in new_balances.items():
+                self._balances[ccy] = amount
+
 
 # ── FundMoverConfig ───────────────────────────────────────────────────────────
 
