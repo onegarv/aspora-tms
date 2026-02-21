@@ -18,6 +18,8 @@ import logging
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
+from bus.base import EventBus
+from bus.events import create_event, PROPOSAL_APPROVED
 from models.domain import FundMovementProposal, ProposalStatus
 from config.settings import settings
 
@@ -46,11 +48,19 @@ class MakerCheckerWorkflow:
         audit_log     — AuditLog service for immutable trail
     """
 
-    def __init__(self, db, auth_service, alert_router, audit_log: "AuditLog") -> None:
+    def __init__(
+        self,
+        db,
+        auth_service,
+        alert_router,
+        audit_log: "AuditLog",
+        bus: "EventBus | None" = None,
+    ) -> None:
         self.db           = db
         self.auth         = auth_service
         self.alerts       = alert_router
         self.audit        = audit_log
+        self.bus          = bus
 
     # ── Public API ────────────────────────────────────────────────────────
 
@@ -255,7 +265,7 @@ class MakerCheckerWorkflow:
         return errors
 
     async def _execute(self, proposal: FundMovementProposal) -> dict:
-        """Mark as executed and trigger bank API submission (delegated to FundMover)."""
+        """Mark as executed and publish PROPOSAL_APPROVED to the bus."""
         proposal.status     = ProposalStatus.EXECUTED
         proposal.executed_at = datetime.utcnow()
         proposal.updated_at  = datetime.utcnow()
@@ -273,6 +283,16 @@ class MakerCheckerWorkflow:
                 "rail": proposal.rail,
             },
         )
+
+        if self.bus is not None:
+            await self.bus.publish(
+                create_event(
+                    event_type=PROPOSAL_APPROVED,
+                    source_agent="maker_checker",
+                    payload={"proposal_id": proposal.id},
+                )
+            )
+
         logger.info("proposal executed", extra={
             "proposal_id": proposal.id,
             "amount": proposal.amount,
