@@ -176,12 +176,12 @@ class OperationsAgent(BaseAgent):
         now_utc = datetime.now(timezone.utc)
         self._check_day_rollover(now_utc)
 
-        # Step 2: holiday lookahead
+        # Step 2: holiday lookahead (includes dst_transitions)
         lookahead = self._build_holiday_lookahead(now_utc)
         await self.emit(
             HOLIDAY_LOOKAHEAD,
             payload={
-                "holidays":         lookahead,
+                **lookahead,
                 "generated_at_utc": now_utc.isoformat(),
             },
         )
@@ -564,15 +564,25 @@ class OperationsAgent(BaseAgent):
 
             if 0 < mins <= self._window_closing_alert_min:
                 rail = self._windows.get_rail(ccy)
-                await self.emit(
-                    WINDOW_CLOSING,
-                    payload={
-                        "currency":          ccy,
-                        "rail":              rail,
-                        "minutes_remaining": mins,
-                        "close_time_utc":    now_utc.isoformat(),
-                    },
-                )
+                payload: dict = {
+                    "currency":          ccy,
+                    "rail":              rail,
+                    "minutes_remaining": mins,
+                    "close_time_utc":    now_utc.isoformat(),
+                }
+                # Add dynamic IST equivalent for rails that have a fixed local close time.
+                # AED uses a GST cutoff (not a TransferWindow) so is excluded.
+                if ccy in ("USD", "GBP", "INR"):
+                    try:
+                        window = self._windows.get_window(ccy)
+                        payload["window_closes_local"] = window.official_close_time.isoformat()
+                        payload["window_closes_ist"]   = window.close_time_ist().isoformat()
+                    except Exception as exc:
+                        logger.warning(
+                            "could not compute IST close time for alert",
+                            extra={"currency": ccy, "error": str(exc)},
+                        )
+                await self.emit(WINDOW_CLOSING, payload=payload)
                 self._window_alerts_sent.add(alert_key)
                 logger.warning(
                     "window closing alert fired",
@@ -583,10 +593,11 @@ class OperationsAgent(BaseAgent):
         self,
         now_utc: datetime,
         days: int | None = None,
-    ) -> dict[str, list[str]]:
+    ) -> dict:
         """
-        Return a dict of {ISO-date: [calendar, ...]} for holidays in the next
-        `days` days across all banking calendars.
+        Return a dict with:
+          "holidays"        — {ISO-date: [calendar, ...]} for the next `days` days
+          "dst_transitions" — list of upcoming DST transitions (next 7 days)
         """
         days      = days if days is not None else self._lookahead_days
         from_date = self._cal.today(IN_RBI_FX, now_utc)
@@ -605,7 +616,69 @@ class OperationsAgent(BaseAgent):
                     "holiday lookahead failed for calendar",
                     extra={"calendar": calendar, "error": str(exc)},
                 )
-        return result
+
+        dst_alerts = self._get_dst_transitions(now_utc, lookahead_days=7)
+        return {"holidays": result, "dst_transitions": dst_alerts}
+
+    def _get_dst_transitions(
+        self, now_utc: datetime, lookahead_days: int = 7
+    ) -> list[dict]:
+        """
+        Return upcoming DST transitions in the next `lookahead_days` days for
+        USD (America/New_York), GBP (Europe/London), and EUR (Europe/Berlin).
+
+        Detects a transition by comparing the UTC offset at noon on consecutive days.
+        INR and AED are intentionally omitted — neither jurisdiction observes DST.
+        """
+        _DST_CURRENCIES = [
+            ("USD", ZoneInfo("America/New_York")),
+            ("GBP", ZoneInfo("Europe/London")),
+            ("EUR", ZoneInfo("Europe/Berlin")),
+        ]
+        transitions: list[dict] = []
+        today = now_utc.astimezone(TZ_IST).date()
+
+        for currency, tz in _DST_CURRENCIES:
+            for day_offset in range(lookahead_days):
+                check_date = today + timedelta(days=day_offset)
+                dt_noon = datetime(
+                    check_date.year, check_date.month, check_date.day,
+                    12, 0, tzinfo=tz,
+                )
+                dt_next_noon = dt_noon + timedelta(days=1)
+
+                offset_today = dt_noon.utcoffset()
+                offset_next  = dt_next_noon.utcoffset()
+
+                if offset_today == offset_next:
+                    continue
+
+                shift_min = int((offset_next - offset_today).total_seconds() / 60)  # type: ignore[operator]
+                direction = "spring_forward" if shift_min > 0 else "fall_back"
+
+                # Compute the IST-equivalent window close before and after the transition
+                try:
+                    window = self._windows.get_window(currency)
+                    close_before = window.close_time_ist(check_date).strftime("%I:%M %p IST")
+                    close_after  = window.close_time_ist(check_date + timedelta(days=1)).strftime("%I:%M %p IST")
+                    impact = (
+                        f"{currency} window close shifts from "
+                        f"{close_before} to {close_after} "
+                        f"on {check_date + timedelta(days=1)} ({direction.replace('_', ' ')})"
+                    )
+                except Exception:
+                    impact = f"{currency} window IST close shifts on {check_date + timedelta(days=1)}"
+
+                transitions.append({
+                    "currency":      currency,
+                    "date":          check_date.isoformat(),
+                    "direction":     direction,
+                    "shift_minutes": abs(shift_min),
+                    "impact":        impact,
+                    "severity":      "warning",
+                })
+
+        return transitions
 
     async def _emit_nostro_balances(self) -> None:
         """Publish current available balance for each monitored currency."""

@@ -687,3 +687,40 @@ class TestTodayTimezone:
         assert ae_date == date(2025, 1, 2)
         assert us_date == date(2025, 1, 1)
         assert ae_date != us_date
+
+
+# ── J. DST transition detection ───────────────────────────────────────────────
+
+class TestDSTTransitions:
+
+    def test_dst_spring_forward_us_2026(self, svc: CalendarService) -> None:
+        """US springs forward overnight Mar 7→8 2026.
+        The detector records Mar 7 — the last day with the old (EST) offset."""
+        transitions = svc.get_dst_transitions(date(2026, 3, 1), date(2026, 3, 15))
+        us = [t for t in transitions if t["jurisdiction"] == "US"]
+        assert len(us) == 1
+        assert us[0]["date"]          == "2026-03-07"
+        assert us[0]["direction"]     == "spring_forward"
+        assert us[0]["shift_minutes"] == 60
+        assert us[0]["is_holiday"]    is False
+
+    def test_dst_fall_back_us_2026(self, svc: CalendarService) -> None:
+        """US falls back on Nov 1 2026 (first Sunday of November)."""
+        transitions = svc.get_dst_transitions(date(2026, 10, 25), date(2026, 11, 5))
+        us = [t for t in transitions if t["jurisdiction"] == "US"]
+        assert len(us) == 1
+        assert us[0]["direction"]     == "fall_back"
+        assert us[0]["shift_minutes"] == 60
+
+    def test_no_dst_for_india_or_uae(self, svc: CalendarService) -> None:
+        """IN and AE don't observe DST — must never appear in transitions."""
+        transitions = svc.get_dst_transitions(date(2026, 1, 1), date(2026, 12, 31))
+        jurisdictions = {t["jurisdiction"] for t in transitions}
+        assert "IN" not in jurisdictions
+        assert "AE" not in jurisdictions
+
+    def test_empty_range_returns_no_transitions(self, svc: CalendarService) -> None:
+        """A range with no DST events returns an empty list."""
+        # Mid-summer: no transitions for any jurisdiction
+        transitions = svc.get_dst_transitions(date(2026, 7, 1), date(2026, 7, 31))
+        assert transitions == []
