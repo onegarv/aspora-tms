@@ -184,7 +184,7 @@ class OperationsAgent(BaseAgent):
             HOLIDAY_LOOKAHEAD,
             payload={
                 **lookahead,
-                "generated_at_utc": now_utc.isoformat(),
+                "generated_at": now_utc.isoformat(),
             },
         )
 
