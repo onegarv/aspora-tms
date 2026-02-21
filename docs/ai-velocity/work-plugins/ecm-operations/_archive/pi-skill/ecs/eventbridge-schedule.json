@@ -1,0 +1,25 @@
+{
+  "Name": "ecm-triage-schedule",
+  "Description": "Runs ECM triage at 7AM, 2PM, 8PM UAE time",
+  "ScheduleExpression": "cron(0 3,10,16 * * ? *)",
+  "State": "ENABLED",
+  "Targets": [
+    {
+      "Id": "ecm-triage-target",
+      "Arn": "arn:aws:ecs:${AWS_REGION}:${AWS_ACCOUNT_ID}:cluster/ecm-operations",
+      "RoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsEventsRole",
+      "EcsParameters": {
+        "TaskDefinitionArn": "arn:aws:ecs:${AWS_REGION}:${AWS_ACCOUNT_ID}:task-definition/ecm-triage-skill",
+        "TaskCount": 1,
+        "LaunchType": "FARGATE",
+        "NetworkConfiguration": {
+          "awsvpcConfiguration": {
+            "Subnets": ["${SUBNET_ID_1}", "${SUBNET_ID_2}"],
+            "SecurityGroups": ["${SECURITY_GROUP_ID}"],
+            "AssignPublicIp": "ENABLED"
+          }
+        }
+      }
+    }
+  ]
+}

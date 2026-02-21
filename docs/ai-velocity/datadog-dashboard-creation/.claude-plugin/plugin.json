@@ -1,0 +1,19 @@
+{
+  "name": "datadog-dashboard-creation",
+  "version": "2.0.0",
+  "description": "Creates production-grade Datadog dashboards following Google SRE Four Golden Signals and RED method. Use when asked to create dashboards, visualize metrics, or set up service monitoring. Integrates with Datadog MCP for direct API operations.",
+  "author": {
+    "name": "Vance Engineering Team"
+  },
+  "repository": "https://github.com/Vance-Club/ai-velocity",
+  "keywords": [
+    "datadog",
+    "dashboard",
+    "sre",
+    "observability",
+    "monitoring",
+    "red-method",
+    "golden-signals",
+    "mcp"
+  ]
+}

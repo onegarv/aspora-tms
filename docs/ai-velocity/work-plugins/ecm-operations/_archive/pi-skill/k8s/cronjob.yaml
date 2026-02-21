@@ -1,0 +1,75 @@
+---
+# ECM Triage Skill - Kubernetes CronJob
+# Runs at 7AM, 2PM, 8PM UAE time (3AM, 10AM, 4PM UTC)
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ecm-triage-skill
+  namespace: ecm-operations
+  labels:
+    app: ecm-triage
+    component: skill
+spec:
+  schedule: "0 3,10,16 * * *"
+  timeZone: "Asia/Dubai"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+            app: ecm-triage
+        spec:
+          restartPolicy: Never
+          serviceAccountName: ecm-triage-sa
+          containers:
+            - name: triage
+              image: ghcr.io/vance-club/ecm-triage-skill:latest
+              command: ["./entrypoint.sh", "triage"]
+              envFrom:
+                - secretRef:
+                    name: ecm-triage-secrets
+              env:
+                - name: SPREADSHEET_ID
+                  value: "1r50OEZlFVSUmU1tkLBqx2_BzlilZ3s0pArNHV83tRks"
+                - name: SLACK_CHANNEL_ID
+                  value: "C0AD6C36LVC"
+              resources:
+                requests:
+                  memory: "512Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "1Gi"
+                  cpu: "500m"
+
+---
+# Secrets (apply separately with real values)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ecm-triage-secrets
+  namespace: ecm-operations
+type: Opaque
+stringData:
+  ANTHROPIC_API_KEY: "sk-ant-xxx"
+  SLACK_BOT_TOKEN: "xoxb-xxx"
+
+---
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ecm-triage-sa
+  namespace: ecm-operations
+
+---
+# Namespace (if not exists)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ecm-operations

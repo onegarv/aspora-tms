@@ -1,0 +1,907 @@
+{
+  "title": "Beneficiary Service - Application Performance",
+  "description": "Multi-level dashboard for beneficiary service performance monitoring following Four Golden Signals (SRE) and RED method",
+  "layout_type": "ordered",
+  "template_variables": [
+    {
+      "name": "env",
+      "prefix": "env",
+      "available_values": ["prod", "stg", "dev"],
+      "default": "prod"
+    },
+    {
+      "name": "service",
+      "prefix": "service",
+      "available_values": ["beneficiary-service"],
+      "default": "beneficiary-service"
+    },
+    {
+      "name": "verifier",
+      "prefix": "verifier",
+      "available_values": ["*", "decentro", "zoop_lite", "zoop_advance", "hyperverge", "attestr"],
+      "default": "*"
+    },
+    {
+      "name": "provider",
+      "prefix": "provider",
+      "available_values": ["*", "decentro", "zoop", "hyperverge", "attestr", "cashfree", "razorpay"],
+      "default": "*"
+    }
+  ],
+  "widgets": [
+    {
+      "definition": {
+        "type": "note",
+        "content": "# Beneficiary Service - Application Performance\n\n**Service**: Beneficiary Management | **Architecture**: API → Verification Strategy → External Providers (Decentro, Zoop, Hyperverge, Attestr)\n\n**Four Golden Signals (SRE)**: Traffic | Errors | Latency | Saturation\n**RED Method**: Rate | Errors | Duration\n\n**Key Operations**:\n- Beneficiary Creation (SAVINGS, NRE, UNKNOWN types)\n- Verification via multiple providers (penny drop, bank validation)\n- External API integrations (Decentro, Zoop, Hyperverge, Attestr, Cashfree)\n\n**SLO Thresholds:**\n- Healthy: Error Rate < 1%, Latency p95 < 500ms\n- Degraded: Error Rate 1-5%, Latency 500ms-2s  \n- Critical: Error Rate > 5%, Latency > 2s\n\n**Debug Flow (Top-Down)**: Health Summary → Golden Signals → Verifier Breakdown → External API Deep Dive → Logs",
+        "background_color": "blue",
+        "font_size": "14",
+        "text_align": "left",
+        "vertical_align": "top",
+        "has_padding": true
+      },
+      "layout": { "x": 0, "y": 0, "width": 12, "height": 3 }
+    },
+    {
+      "definition": {
+        "type": "group",
+        "title": "Service Health Summary - SRE Four Golden Signals",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "type": "note",
+              "content": "### 30-Second Health Check\n\n**Quick Scan**: Look for red/yellow indicators. All green = healthy system.\n\n**Four Golden Signals**: Traffic (throughput) | Errors (failure rate) | Latency (response time) | Saturation (resource usage)",
+              "background_color": "blue",
+              "font_size": "12",
+              "text_align": "left",
+              "has_padding": true
+            },
+            "layout": { "x": 0, "y": 0, "width": 12, "height": 1 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Overall Error Rate (SLO: < 1%)",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "min", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "failures", "data_source": "metrics", "query": "sum:beneficiary.create.count{outcome:failure,$env,$service}.as_rate()" },
+                  { "name": "total", "data_source": "metrics", "query": "sum:beneficiary.create.count{$env,$service}.as_rate()" }
+                ],
+                "formulas": [{ "formula": "(failures / total) * 100", "alias": "Error Rate %" }],
+                "style": { "palette": "red", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "%", "min": "0", "max": "10" },
+              "markers": [
+                { "value": "1", "display_type": "warning dashed", "label": "Warning (1%)" },
+                { "value": "5", "display_type": "error solid", "label": "Critical (5%)" }
+              ]
+            },
+            "layout": { "x": 0, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Overall Latency p95 (SLO: < 500ms)",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "min", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "p95", "data_source": "metrics", "query": "p95:trace.servlet.request{$env,$service}" },
+                  { "name": "p99", "data_source": "metrics", "query": "p99:trace.servlet.request{$env,$service}" }
+                ],
+                "formulas": [
+                  { "formula": "p95 * 1000", "alias": "p95 (ms)" },
+                  { "formula": "p99 * 1000", "alias": "p99 (ms)" }
+                ],
+                "style": { "palette": "blue", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "ms", "scale": "linear" },
+              "markers": [
+                { "value": "500", "display_type": "warning dashed", "label": "SLO (500ms)" },
+                { "value": "2000", "display_type": "error solid", "label": "Critical (2s)" }
+              ]
+            },
+            "layout": { "x": 4, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Overall Throughput (Operations/s)",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "min", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "creates", "data_source": "metrics", "query": "sum:beneficiary.create.count{$env,$service}.as_rate()" },
+                  { "name": "verifications", "data_source": "metrics", "query": "sum:beneficiary.verification.count{$env,$service}.as_rate()" }
+                ],
+                "formulas": [
+                  { "formula": "creates", "alias": "Creates/s" },
+                  { "formula": "verifications", "alias": "Verifications/s" }
+                ],
+                "style": { "palette": "green", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "ops/s" }
+            },
+            "layout": { "x": 8, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Verification Latency by Verifier (p95)",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "decentro", "data_source": "metrics", "query": "p95:beneficiary.verifier.decentro{$env,$service}" },
+                  { "name": "zoop", "data_source": "metrics", "query": "p95:beneficiary.verifier.zoop.lite{$env,$service}" },
+                  { "name": "hyperverge", "data_source": "metrics", "query": "p95:beneficiary.verifier.hyperverge{$env,$service}" }
+                ],
+                "formulas": [
+                  { "formula": "decentro * 1000", "alias": "Decentro (ms)" },
+                  { "formula": "zoop * 1000", "alias": "Zoop (ms)" },
+                  { "formula": "hyperverge * 1000", "alias": "Hyperverge (ms)" }
+                ],
+                "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "ms" },
+              "markers": [
+                { "value": "2000", "display_type": "warning dashed", "label": "Warning (2s)" },
+                { "value": "5000", "display_type": "error solid", "label": "Critical (5s)" }
+              ]
+            },
+            "layout": { "x": 0, "y": 3, "width": 6, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "External API Error Rate",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "failures", "data_source": "metrics", "query": "sum:external.api.calls.count{outcome:failure,$env,$service}.as_rate()" },
+                  { "name": "total", "data_source": "metrics", "query": "sum:external.api.calls.count{$env,$service}.as_rate()" }
+                ],
+                "formulas": [{ "formula": "(failures / total) * 100", "alias": "Error Rate %" }],
+                "style": { "palette": "orange", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "%", "min": "0", "max": "10" },
+              "markers": [
+                { "value": "1", "display_type": "warning dashed", "label": "Warning (1%)" },
+                { "value": "5", "display_type": "error solid", "label": "Critical (5%)" }
+              ]
+            },
+            "layout": { "x": 6, "y": 3, "width": 6, "height": 2 }
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 3, "width": 12, "height": 6 }
+    },
+    {
+      "definition": {
+        "type": "group",
+        "title": "HTTP Performance",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "HTTP Request Rate by Endpoint",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "hits", "data_source": "apm_metrics", "stat": "hits", "service": "beneficiary-service", "group_by": ["resource_name"] }],
+                "formulas": [{ "formula": "hits" }],
+                "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "req/s" }
+            },
+            "layout": { "x": 0, "y": 0, "width": 6, "height": 3 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "HTTP Status Codes",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "status", "data_source": "apm_metrics", "stat": "hits", "service": "beneficiary-service", "group_by": ["http.status_code"] }],
+                "formulas": [{ "formula": "status" }],
+                "style": { "palette": "semantic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "bars"
+              }],
+              "yaxis": { "label": "req/s" }
+            },
+            "layout": { "x": 6, "y": 0, "width": 6, "height": 3 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Server Request Duration (p50, p95, p99)",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "avg", "data_source": "apm_metrics", "stat": "latency_avg", "service": "beneficiary-service", "group_by": [] },
+                  { "name": "p95", "data_source": "apm_metrics", "stat": "latency_p95", "service": "beneficiary-service" },
+                  { "name": "p99", "data_source": "apm_metrics", "stat": "latency_p99", "service": "beneficiary-service" }
+                ],
+                "formulas": [
+                  { "formula": "avg", "alias": "avg" },
+                  { "formula": "p95", "alias": "p95" },
+                  { "formula": "p99", "alias": "p99" }
+                ],
+                "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "seconds" }
+            },
+            "layout": { "x": 0, "y": 3, "width": 12, "height": 2 }
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 9, "width": 12, "height": 6 }
+    },
+    {
+      "definition": {
+        "type": "group",
+        "title": "Signal 1: Traffic (Rate) - Throughput Metrics",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "type": "note",
+              "content": "### Signal 1: Traffic (Rate)\n\n**SRE Golden Signal**: Measures demand on the system.\n\n**Key Metrics**: Beneficiary creates, verification attempts, external API calls\n\n**What to Watch**:\n- Steady traffic = normal operations\n- Sudden drops = potential failures upstream\n- Spikes = potential load issues",
+              "background_color": "blue",
+              "font_size": "12",
+              "text_align": "left",
+              "has_padding": true
+            },
+            "layout": { "x": 0, "y": 0, "width": 12, "height": 1 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Beneficiary Creation Rate by Type",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "creates", "data_source": "metrics", "query": "sum:beneficiary.create.count{$env,$service} by {beneficiary_type}.as_rate()" }],
+                "style": { "palette": "green", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "creates/s" }
+            },
+            "layout": { "x": 0, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Verification Rate by Verifier",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "verifications", "data_source": "metrics", "query": "sum:beneficiary.verification.count{$env,$service} by {verifier}.as_rate()" }],
+                "style": { "palette": "cool", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "verifications/s" }
+            },
+            "layout": { "x": 4, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "External API Calls by Provider",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "calls", "data_source": "metrics", "query": "sum:external.api.calls.count{$env,$service} by {provider}.as_rate()" }],
+                "style": { "palette": "purple", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "calls/s" }
+            },
+            "layout": { "x": 8, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Verification Status Distribution",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "status", "data_source": "metrics", "query": "sum:beneficiary.verification.count{$env,$service} by {status}.as_rate()" }],
+                "style": { "palette": "semantic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "bars"
+              }],
+              "yaxis": { "label": "verifications/s" }
+            },
+            "layout": { "x": 0, "y": 3, "width": 6, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Verifier Outcome Distribution",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "outcomes", "data_source": "metrics", "query": "sum:beneficiary.verifier.outcome.count{$env,$service} by {verifier,outcome}.as_rate()" }],
+                "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "bars"
+              }],
+              "yaxis": { "label": "outcomes/s" }
+            },
+            "layout": { "x": 6, "y": 3, "width": 6, "height": 2 }
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 15, "width": 12, "height": 6 }
+    },
+    {
+      "definition": {
+        "type": "group",
+        "title": "Signal 2: Errors - Failure Tracking",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "type": "note",
+              "content": "### Signal 2: Errors\n\n**SRE Golden Signal**: Rate of failed requests.\n\n**Error Categories**:\n- **Creation Errors**: Failed beneficiary creation\n- **Verification Failures**: Provider rejections or timeouts\n- **External API Errors**: Third-party service failures\n\n**What to Watch**:\n- Error rate > 1% = investigate immediately\n- Errors by type helps identify root cause",
+              "background_color": "red",
+              "font_size": "12",
+              "text_align": "left",
+              "has_padding": true
+            },
+            "layout": { "x": 0, "y": 0, "width": 12, "height": 1 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Beneficiary Creation Error Rate (%)",
+              "title_size": "16",
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "failures", "data_source": "metrics", "query": "sum:beneficiary.create.count{outcome:failure,$env,$service}.as_rate()" },
+                  { "name": "total", "data_source": "metrics", "query": "sum:beneficiary.create.count{$env,$service}.as_rate()" }
+                ],
+                "formulas": [{ "formula": "(failures / total) * 100", "alias": "Error Rate %" }],
+                "style": { "palette": "red", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "min": "0", "max": "10", "label": "%" },
+              "markers": [
+                { "value": "1", "display_type": "warning dashed", "label": "Warning (1%)" },
+                { "value": "5", "display_type": "error solid", "label": "Critical (5%)" }
+              ]
+            },
+            "layout": { "x": 0, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "External API Error Rate by Provider (%)",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "failures", "data_source": "metrics", "query": "sum:external.api.calls.count{outcome:failure,$env,$service} by {provider}.as_rate()" },
+                  { "name": "total", "data_source": "metrics", "query": "sum:external.api.calls.count{$env,$service} by {provider}.as_rate()" }
+                ],
+                "formulas": [{ "formula": "(failures / total) * 100", "alias": "Error Rate %" }],
+                "style": { "palette": "warm", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "min": "0", "max": "10", "label": "%" },
+              "markers": [
+                { "value": "1", "display_type": "warning dashed", "label": "Warning (1%)" },
+                { "value": "5", "display_type": "error solid", "label": "Critical (5%)" }
+              ]
+            },
+            "layout": { "x": 4, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "External API Errors by Type",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "errors", "data_source": "metrics", "query": "sum:external.api.errors.count{$env,$service} by {error_type}.as_rate()" }],
+                "style": { "palette": "warm", "line_type": "solid", "line_width": "normal" },
+                "display_type": "bars"
+              }],
+              "yaxis": { "label": "errors/s" }
+            },
+            "layout": { "x": 8, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Errors by Type",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "errors", "data_source": "metrics", "query": "sum:beneficiary.errors.count{$env,$service} by {error_type}.as_rate()" }],
+                "style": { "palette": "warm", "line_type": "solid", "line_width": "normal" },
+                "display_type": "bars"
+              }],
+              "yaxis": { "label": "errors/s" }
+            },
+            "layout": { "x": 0, "y": 3, "width": 6, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Verification Failures by Verifier & Reason",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "failures", "data_source": "metrics", "query": "sum:beneficiary.verification.failures.count{$env,$service} by {verifier,reason}.as_rate()" }],
+                "style": { "palette": "red", "line_type": "solid", "line_width": "normal" },
+                "display_type": "bars"
+              }],
+              "yaxis": { "label": "failures/s" }
+            },
+            "layout": { "x": 6, "y": 3, "width": 6, "height": 2 }
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 21, "width": 12, "height": 6 }
+    },
+    {
+      "definition": {
+        "type": "group",
+        "title": "Signal 3: Latency (Duration) - Response Time Analysis",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "type": "note",
+              "content": "### Signal 3: Latency (Duration)\n\n**SRE Golden Signal**: Time to serve requests.\n\n**Latency Layers**:\n- **Operation Duration**: End-to-end processing time\n- **Verifier Duration**: Time spent in each verification provider\n- **External API Duration**: Third-party API response times\n\n**What to Watch**:\n- p95 > 500ms = degraded user experience\n- p99 spikes = investigate outliers",
+              "background_color": "blue",
+              "font_size": "12",
+              "text_align": "left",
+              "has_padding": true
+            },
+            "layout": { "x": 0, "y": 0, "width": 12, "height": 1 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Operation Duration (p50, p95, p99)",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "p50", "data_source": "metrics", "query": "avg:beneficiary.operation.duration.quantile{quantile:0.5,$env,$service}" },
+                  { "name": "p95", "data_source": "metrics", "query": "avg:beneficiary.operation.duration.quantile{quantile:0.95,$env,$service}" },
+                  { "name": "p99", "data_source": "metrics", "query": "avg:beneficiary.operation.duration.quantile{quantile:0.99,$env,$service}" }
+                ],
+                "formulas": [
+                  { "formula": "p50 * 1000", "alias": "p50 (ms)" },
+                  { "formula": "p95 * 1000", "alias": "p95 (ms)" },
+                  { "formula": "p99 * 1000", "alias": "p99 (ms)" }
+                ],
+                "style": { "palette": "blue", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "ms" },
+              "markers": [
+                { "value": "500", "display_type": "warning dashed", "label": "SLO (500ms)" },
+                { "value": "2000", "display_type": "error solid", "label": "Critical (2s)" }
+              ]
+            },
+            "layout": { "x": 0, "y": 1, "width": 6, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Operation Duration by Operation (p95)",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "p95", "data_source": "metrics", "query": "avg:beneficiary.operation.duration.quantile{quantile:0.95,$env,$service} by {operation}" }],
+                "formulas": [{ "formula": "p95 * 1000", "alias": "p95 (ms)" }],
+                "style": { "palette": "cool", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "ms" }
+            },
+            "layout": { "x": 6, "y": 1, "width": 6, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "External API Duration by Provider (p95)",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "p95", "data_source": "metrics", "query": "avg:external.api.duration.seconds.quantile{quantile:0.95,$env,$service} by {provider}" }],
+                "formulas": [{ "formula": "p95 * 1000", "alias": "p95 (ms)" }],
+                "style": { "palette": "purple", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "ms" },
+              "markers": [
+                { "value": "1000", "display_type": "warning dashed", "label": "Warning (1s)" },
+                { "value": "5000", "display_type": "error solid", "label": "Critical (5s)" }
+              ]
+            },
+            "layout": { "x": 0, "y": 3, "width": 6, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Beneficiary Create Duration (p95)",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "create", "data_source": "metrics", "query": "p95:beneficiary.create{$env,$service}" },
+                  { "name": "create_v2", "data_source": "metrics", "query": "p95:beneficiary.create.v2{$env,$service}" }
+                ],
+                "formulas": [
+                  { "formula": "create * 1000", "alias": "Create v1 (ms)" },
+                  { "formula": "create_v2 * 1000", "alias": "Create v2 (ms)" }
+                ],
+                "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "ms" }
+            },
+            "layout": { "x": 6, "y": 3, "width": 6, "height": 2 }
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 27, "width": 12, "height": 6 }
+    },
+    {
+      "definition": {
+        "type": "group",
+        "title": "Verifier Breakdown - Per-Provider Analysis",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "type": "note",
+              "content": "### Verifier Breakdown\n\nDetailed analysis per verification provider (Decentro, Zoop, Hyperverge, Attestr).\n\n**How to Use**:\n1. Use the Verifier filter (top) to focus on specific provider\n2. Compare metrics across providers to identify issues\n3. High duration = provider slowness\n4. High failure rate = provider issues or bad data\n\n**Debugging Workflow**:\n1. Identify failing verifier from this section\n2. Check external API metrics for that provider\n3. Review error types in logs",
+              "background_color": "green",
+              "font_size": "12",
+              "text_align": "left",
+              "has_padding": true
+            },
+            "layout": { "x": 0, "y": 0, "width": 12, "height": 1 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Decentro - Verification Rate & Duration",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "rate", "data_source": "metrics", "query": "sum:beneficiary.verification.count{verifier:decentro,$env,$service}.as_rate()" },
+                  { "name": "p95", "data_source": "metrics", "query": "p95:beneficiary.verifier.decentro{$env,$service}" }
+                ],
+                "formulas": [
+                  { "formula": "rate", "alias": "Rate/s" },
+                  { "formula": "p95 * 1000", "alias": "p95 (ms)" }
+                ],
+                "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "" }
+            },
+            "layout": { "x": 0, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Zoop - Verification Rate & Duration",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "lite_rate", "data_source": "metrics", "query": "sum:beneficiary.verification.count{verifier:zoop_lite,$env,$service}.as_rate()" },
+                  { "name": "lite_p95", "data_source": "metrics", "query": "p95:beneficiary.verifier.zoop.lite{$env,$service}" }
+                ],
+                "formulas": [
+                  { "formula": "lite_rate", "alias": "Lite Rate/s" },
+                  { "formula": "lite_p95 * 1000", "alias": "Lite p95 (ms)" }
+                ],
+                "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "" }
+            },
+            "layout": { "x": 4, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Hyperverge - Verification Rate & Duration",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "rate", "data_source": "metrics", "query": "sum:beneficiary.verification.count{verifier:hyperverge,$env,$service}.as_rate()" },
+                  { "name": "p95", "data_source": "metrics", "query": "p95:beneficiary.verifier.hyperverge{$env,$service}" }
+                ],
+                "formulas": [
+                  { "formula": "rate", "alias": "Rate/s" },
+                  { "formula": "p95 * 1000", "alias": "p95 (ms)" }
+                ],
+                "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "" }
+            },
+            "layout": { "x": 8, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Verification Failures by Verifier",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "failures", "data_source": "metrics", "query": "sum:beneficiary.verification.failures.count{$env,$service} by {verifier}.as_rate()" }],
+                "style": { "palette": "red", "line_type": "solid", "line_width": "normal" },
+                "display_type": "bars"
+              }],
+              "yaxis": { "label": "failures/s" }
+            },
+            "layout": { "x": 0, "y": 3, "width": 6, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Strategy Resolution Distribution",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "resolution", "data_source": "metrics", "query": "sum:beneficiary.strategy.resolution.count{$env,$service} by {strategy,resolution}.as_rate()" }],
+                "style": { "palette": "semantic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "bars"
+              }],
+              "yaxis": { "label": "resolutions/s" }
+            },
+            "layout": { "x": 6, "y": 3, "width": 6, "height": 2 }
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 33, "width": 12, "height": 6 }
+    },
+    {
+      "definition": {
+        "type": "group",
+        "title": "Signal 4: Saturation - Resource Utilization",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "type": "note",
+              "content": "### Signal 4: Saturation\n\n**SRE Golden Signal**: How \"full\" the service is.\n\n**Key Metrics**:\n- **Lock Contention**: Distributed lock pressure\n- **JVM Heap**: Memory utilization\n- **GC Pauses**: Garbage collection impact\n- **Threads**: Thread pool saturation\n\n**What to Watch**:\n- CPU > 70% = consider scaling\n- Memory > 80% = risk of OOM\n- GC pauses > 100ms = tune GC",
+              "background_color": "orange",
+              "font_size": "12",
+              "text_align": "left",
+              "has_padding": true
+            },
+            "layout": { "x": 0, "y": 0, "width": 12, "height": 1 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Lock Contention Events",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [{ "name": "locks", "data_source": "metrics", "query": "sum:beneficiary.lock.events.count{$env,$service} by {outcome}.as_rate()" }],
+                "style": { "palette": "orange", "line_type": "solid", "line_width": "normal" },
+                "display_type": "bars"
+              }],
+              "yaxis": { "label": "events/s" }
+            },
+            "layout": { "x": 0, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "JVM Heap Memory",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "used", "data_source": "metrics", "query": "avg:jvm.memory.used{area:heap,$env,$service}" },
+                  { "name": "max", "data_source": "metrics", "query": "avg:jvm.memory.max{area:heap,$env,$service}" }
+                ],
+                "formulas": [
+                  { "formula": "used / 1073741824", "alias": "Used (GB)" },
+                  { "formula": "max / 1073741824", "alias": "Max (GB)" }
+                ],
+                "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "GB" }
+            },
+            "layout": { "x": 4, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "GC Pause Duration",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "g1", "data_source": "metrics", "query": "avg:jvm.gc.pause{gc:G1,$env,$service}" },
+                  { "name": "parallel", "data_source": "metrics", "query": "avg:jvm.gc.pause{gc:ParallelGC,$env,$service}" }
+                ],
+                "formulas": [
+                  { "formula": "g1 * 1000", "alias": "G1 GC (ms)" },
+                  { "formula": "parallel * 1000", "alias": "ParallelGC (ms)" }
+                ],
+                "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "ms", "min": "0" },
+              "markers": [
+                { "value": "100", "display_type": "warning dashed", "label": "Warning (100ms)" },
+                { "value": "500", "display_type": "error solid", "label": "Critical (500ms)" }
+              ]
+            },
+            "layout": { "x": 8, "y": 1, "width": 4, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "JVM Threads",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "live", "data_source": "metrics", "query": "avg:jvm.threads.live{$env,$service}" },
+                  { "name": "peak", "data_source": "metrics", "query": "avg:jvm.threads.peak{$env,$service}" }
+                ],
+                "formulas": [
+                  { "formula": "live", "alias": "Live Threads" },
+                  { "formula": "peak", "alias": "Peak Threads" }
+                ],
+                "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "count", "min": "0" }
+            },
+            "layout": { "x": 0, "y": 3, "width": 6, "height": 2 }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "JVM Non-Heap Memory",
+              "title_size": "16",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "max", "value"],
+              "requests": [{
+                "response_format": "timeseries",
+                "queries": [
+                  { "name": "used", "data_source": "metrics", "query": "avg:jvm.memory.used{area:nonheap,$env,$service}" },
+                  { "name": "max", "data_source": "metrics", "query": "avg:jvm.memory.max{area:nonheap,$env,$service}" }
+                ],
+                "formulas": [
+                  { "formula": "used / 1073741824", "alias": "Used (GB)" },
+                  { "formula": "max / 1073741824", "alias": "Max (GB)" }
+                ],
+                "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                "display_type": "line"
+              }],
+              "yaxis": { "label": "GB" }
+            },
+            "layout": { "x": 6, "y": 3, "width": 6, "height": 2 }
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 39, "width": 12, "height": 6 }
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ecm-manager
+  namespace: ecm-operations
+spec:
+  # 7 AM, 2 PM, 8 PM UAE (UTC+4) = 3, 10, 16 UTC
+  schedule: "0 3,10,16 * * *"
+  timeZone: "Asia/Dubai"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: ecm-manager
+            image: ecm-manager:latest
+            command: ["python", "main.py", "triage"]
+            envFrom:
+            - secretRef:
+                name: ecm-manager-secrets
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "512Mi"
+                cpu: "500m"
+          restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ecm-manager-secrets
+  namespace: ecm-operations
+type: Opaque
+stringData:
+  REDSHIFT_HOST: "your-cluster.region.redshift.amazonaws.com"
+  REDSHIFT_PORT: "5439"
+  REDSHIFT_DATABASE: "your_database"
+  REDSHIFT_USER: "your_user"
+  REDSHIFT_PASSWORD: "your_password"
+  SLACK_BOT_TOKEN: "xoxb-your-token"
+  SLACK_CHANNEL_ID: "C0AD6C36LVC"
+  GOOGLE_SERVICE_ACCOUNT_JSON: |
+    {
+      "type": "service_account",
+      "project_id": "your-project",
+      ...
+    }
+  SPREADSHEET_ID: "1r50OEZlFVSUmU1tkLBqx2_BzlilZ3s0pArNHV83tRks"

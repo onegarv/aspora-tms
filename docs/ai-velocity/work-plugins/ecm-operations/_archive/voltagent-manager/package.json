@@ -1,0 +1,26 @@
+{
+  "name": "ecm-skill-runner",
+  "version": "3.0.0",
+  "description": "ECM Skill Runner — Triggers skills via LLM + MCP",
+  "type": "module",
+  "main": "dist/run.js",
+  "scripts": {
+    "triage": "tsx src/run.ts triage-and-assign",
+    "triage:dry": "tsx src/run.ts triage-and-assign --dry-run",
+    "assign": "tsx src/run.ts assign-tickets",
+    "assign:dry": "tsx src/run.ts assign-tickets --dry-run",
+    "build": "tsc",
+    "start": "node dist/run.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

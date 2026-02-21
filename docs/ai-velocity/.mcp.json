@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "ecm-gateway": {
+      "type": "http",
+      "url": "http://internal-ecm-gateway-svc-464678860.eu-west-2.elb.amazonaws.com:80/mcp"
+    },
+    "datadog": {
+      "command": "npx",
+      "args": ["-y", "@winor30/mcp-server-datadog"],
+      "env": {
+        "DATADOG_API_KEY": "${DATADOG_API_KEY}",
+        "DATADOG_APP_KEY": "${DATADOG_APP_KEY}",
+        "DATADOG_SITE": "app.datadoghq.eu"
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+# OS files
+.DS_Store
+*.swp
+
+# Temp/lock files
+.~lock.*
+watch_*
+
+# Local Claude config
+.claude/
+
+# Backups
+_backup/
+
+# Archives
+*.zip
+
+# Environment files with secrets
+.env
+*.env.local

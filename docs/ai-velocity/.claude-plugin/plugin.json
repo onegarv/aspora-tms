@@ -1,0 +1,8 @@
+{
+  "name": "ai-velocity",
+  "version": "1.0.0",
+  "description": "Production-grade AI skills for engineers: Prometheus instrumentation, Datadog dashboards, alerting, and Go/Java unit testing and coding standards. Accelerate observability setup and ensure consistency across services.",
+  "author": {
+    "name": "Vance Engineering Team"
+  }
+}

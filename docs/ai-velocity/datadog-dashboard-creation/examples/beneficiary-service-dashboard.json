@@ -1,0 +1,932 @@
+{
+  "title": "Beneficiary Service - Application Performance",
+  "description": "SRE dashboard following Four Golden Signals and RED method. Monitors beneficiary creation, verification, and external API integrations.",
+  "layout_type": "ordered",
+  "template_variables": [
+    {
+      "name": "env",
+      "default": "prod",
+      "prefix": "env",
+      "available_values": ["prod", "stg", "dev"]
+    },
+    {
+      "name": "service",
+      "default": "beneficiary-service",
+      "prefix": "service",
+      "available_values": ["beneficiary-service"]
+    }
+  ],
+  "widgets": [
+    {
+      "id": 1000,
+      "definition": {
+        "type": "note",
+        "content": "# Beneficiary Service - Application Performance\n\n**Four Golden Signals**: Traffic | Errors | Latency | Saturation\n\n**Key Operations**:\n- Beneficiary Creation (SAVINGS, NRE, UNKNOWN types)\n- Verification (Decentro, Zoop, Hyperverge providers)\n- External API Calls (validation, lookup)\n\n**SLO Thresholds:**\n- ✅ Healthy: Error Rate < 1%, Latency p95 < 500ms\n- ⚠️ Degraded: Error Rate 1-5%, Latency 500ms-2s\n- 🔴 Critical: Error Rate > 5%, Latency > 2s\n\n**Debug Flow**: Health Summary → Golden Signal Section → Verifier Deep Dive",
+        "background_color": "yellow",
+        "font_size": "14",
+        "text_align": "left",
+        "vertical_align": "top"
+      },
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 3
+      }
+    },
+    {
+      "id": 1100,
+      "definition": {
+        "type": "group",
+        "title": "🚨 Service Health Summary",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 1101,
+            "definition": {
+              "type": "timeseries",
+              "title": "🌐 HTTP Request Rate",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_rate",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits{$env,$service}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Requests/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 4,
+              "height": 2
+            }
+          },
+          {
+            "id": 1102,
+            "definition": {
+              "type": "timeseries",
+              "title": "🔴 HTTP Error Rate (4xx + 5xx)",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "http_errors",
+                      "data_source": "metrics",
+                      "query": "sum:trace.http.request.hits.by_http_status{$env,$service,!http.status_class:2xx}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning (1/s)"
+                },
+                {
+                  "value": "10",
+                  "display_type": "error solid",
+                  "label": "Critical (10/s)"
+                }
+              ]
+            },
+            "layout": {
+              "x": 4,
+              "y": 0,
+              "width": 4,
+              "height": 2
+            }
+          },
+          {
+            "id": 1103,
+            "definition": {
+              "type": "timeseries",
+              "title": "⚡ HTTP Latency p95",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "p95:trace.http.request{$env,$service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "p95 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Latency (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "500",
+                  "display_type": "warning dashed",
+                  "label": "SLO (500ms)"
+                },
+                {
+                  "value": "2000",
+                  "display_type": "error solid",
+                  "label": "Critical (2s)"
+                }
+              ]
+            },
+            "layout": {
+              "x": 8,
+              "y": 0,
+              "width": 4,
+              "height": 2
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 3,
+        "width": 12,
+        "height": 3
+      }
+    },
+    {
+      "id": 1200,
+      "definition": {
+        "type": "group",
+        "title": "📊 Signal 1: Traffic (Rate)",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 1201,
+            "definition": {
+              "type": "timeseries",
+              "title": "Beneficiary Creation Rate",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "creates",
+                      "data_source": "metrics",
+                      "query": "sum:beneficiary.create.count{$env,$service} by {beneficiary_type}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Creates/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 3
+            }
+          },
+          {
+            "id": 1202,
+            "definition": {
+              "type": "timeseries",
+              "title": "Verification Rate by Verifier",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "verifications",
+                      "data_source": "metrics",
+                      "query": "sum:beneficiary.verification.count{$env,$service} by {verifier}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "green",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Verifications/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 3
+            }
+          },
+          {
+            "id": 1203,
+            "definition": {
+              "type": "timeseries",
+              "title": "External API Calls by Provider",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "api_calls",
+                      "data_source": "metrics",
+                      "query": "sum:external.api.calls.count{$env,$service} by {provider}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "cool",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Calls/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 3,
+              "width": 12,
+              "height": 3
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 6,
+        "width": 12,
+        "height": 7
+      }
+    },
+    {
+      "id": 1300,
+      "definition": {
+        "type": "group",
+        "title": "🔴 Signal 2: Errors",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 1301,
+            "definition": {
+              "type": "timeseries",
+              "title": "Beneficiary Creation Error Rate (%)",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "failures",
+                      "data_source": "metrics",
+                      "query": "sum:beneficiary.create.count{outcome:failure,$env,$service}.as_rate()"
+                    },
+                    {
+                      "name": "total",
+                      "data_source": "metrics",
+                      "query": "sum:beneficiary.create.count{$env,$service}.as_rate()"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "(failures / total) * 100",
+                      "alias": "Error Rate %"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "min": "0",
+                "max": "10",
+                "label": "Error %",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning (1%)"
+                },
+                {
+                  "value": "5",
+                  "display_type": "error solid",
+                  "label": "Critical (5%)"
+                }
+              ]
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 2
+            }
+          },
+          {
+            "id": 1302,
+            "definition": {
+              "type": "timeseries",
+              "title": "External API Error Rate (%)",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "failures",
+                      "data_source": "metrics",
+                      "query": "sum:external.api.calls.count{outcome:failure,$env,$service}.as_rate()"
+                    },
+                    {
+                      "name": "total",
+                      "data_source": "metrics",
+                      "query": "sum:external.api.calls.count{$env,$service}.as_rate()"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "(failures / total) * 100",
+                      "alias": "Error Rate %"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "min": "0",
+                "max": "10",
+                "label": "Error %",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1",
+                  "display_type": "warning dashed",
+                  "label": "Warning (1%)"
+                },
+                {
+                  "value": "5",
+                  "display_type": "error solid",
+                  "label": "Critical (5%)"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 2
+            }
+          },
+          {
+            "id": 1303,
+            "definition": {
+              "type": "timeseries",
+              "title": "Errors by Type",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "errors",
+                      "data_source": "metrics",
+                      "query": "sum:beneficiary.errors.count{$env,$service} by {error_type}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "warm",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "bars"
+                }
+              ],
+              "yaxis": {
+                "label": "Errors/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 2,
+              "width": 6,
+              "height": 3
+            }
+          },
+          {
+            "id": 1304,
+            "definition": {
+              "type": "timeseries",
+              "title": "Verification Failures by Verifier",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "failures",
+                      "data_source": "metrics",
+                      "query": "sum:beneficiary.verification.failures.count{$env,$service} by {verifier}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "red",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "bars"
+                }
+              ],
+              "yaxis": {
+                "label": "Failures/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 6,
+              "y": 2,
+              "width": 6,
+              "height": 3
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 13,
+        "width": 12,
+        "height": 6
+      }
+    },
+    {
+      "id": 1400,
+      "definition": {
+        "type": "group",
+        "title": "⚡ Signal 3: Latency (Duration)",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 1401,
+            "definition": {
+              "type": "timeseries",
+              "title": "Operation Duration (p50, p95, p99)",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p50",
+                      "data_source": "metrics",
+                      "query": "avg:beneficiary.operation.duration.quantile{quantile:0.5,$env,$service}"
+                    },
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "avg:beneficiary.operation.duration.quantile{quantile:0.95,$env,$service}"
+                    },
+                    {
+                      "name": "p99",
+                      "data_source": "metrics",
+                      "query": "avg:beneficiary.operation.duration.quantile{quantile:0.99,$env,$service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p50 * 1000",
+                      "alias": "p50 (ms)"
+                    },
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "p95 (ms)"
+                    },
+                    {
+                      "formula": "p99 * 1000",
+                      "alias": "p99 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Duration (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "500",
+                  "display_type": "warning dashed",
+                  "label": "SLO (500ms)"
+                },
+                {
+                  "value": "2000",
+                  "display_type": "error solid",
+                  "label": "Critical (2s)"
+                }
+              ]
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 3
+            }
+          },
+          {
+            "id": 1402,
+            "definition": {
+              "type": "timeseries",
+              "title": "External API Duration by Provider (p95)",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "max", "value"],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "avg:external.api.duration.quantile{quantile:0.95,$env,$service} by {provider}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "p95 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "purple",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Duration (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "1000",
+                  "display_type": "warning dashed",
+                  "label": "Warning (1s)"
+                },
+                {
+                  "value": "5000",
+                  "display_type": "error solid",
+                  "label": "Critical (5s)"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 3
+            }
+          },
+          {
+            "id": 1403,
+            "definition": {
+              "type": "timeseries",
+              "title": "Decentro Verifier Duration (p95)",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "p95",
+                      "data_source": "metrics",
+                      "query": "avg:beneficiary.verifier.decentro.quantile{quantile:0.95,$env,$service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p95 * 1000",
+                      "alias": "Decentro p95 (ms)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "blue",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Duration (ms)",
+                "scale": "linear"
+              },
+              "markers": [
+                {
+                  "value": "2000",
+                  "display_type": "warning dashed",
+                  "label": "Warning (2s)"
+                },
+                {
+                  "value": "5000",
+                  "display_type": "error solid",
+                  "label": "Critical (5s)"
+                }
+              ]
+            },
+            "layout": {
+              "x": 0,
+              "y": 3,
+              "width": 12,
+              "height": 2
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 19,
+        "width": 12,
+        "height": 6
+      }
+    },
+    {
+      "id": 1500,
+      "definition": {
+        "type": "group",
+        "title": "📊 Signal 4: Saturation",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 1501,
+            "definition": {
+              "type": "timeseries",
+              "title": "Lock Contention Events",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "locks",
+                      "data_source": "metrics",
+                      "query": "sum:beneficiary.lock.events.count{$env,$service} by {outcome}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "orange",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "bars"
+                }
+              ],
+              "yaxis": {
+                "label": "Events/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 3
+            }
+          },
+          {
+            "id": 1502,
+            "definition": {
+              "type": "timeseries",
+              "title": "JVM Heap Memory",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "used",
+                      "data_source": "metrics",
+                      "query": "avg:jvm.memory.used{area:heap,$env,$service}"
+                    },
+                    {
+                      "name": "max",
+                      "data_source": "metrics",
+                      "query": "avg:jvm.memory.max{area:heap,$env,$service}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "used / 1073741824",
+                      "alias": "Used (GB)"
+                    },
+                    {
+                      "formula": "max / 1073741824",
+                      "alias": "Max (GB)"
+                    }
+                  ],
+                  "style": {
+                    "palette": "orange",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "Memory (GB)",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 3
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 25,
+        "width": 12,
+        "height": 4
+      }
+    },
+    {
+      "id": 1600,
+      "definition": {
+        "type": "group",
+        "title": "🔍 Deep Dive: Verifier Performance",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 1601,
+            "definition": {
+              "type": "timeseries",
+              "title": "Verification Status by Verifier",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "verifications",
+                      "data_source": "metrics",
+                      "query": "sum:beneficiary.verification.count{$env,$service} by {verifier,status}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "semantic",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "bars"
+                }
+              ],
+              "yaxis": {
+                "label": "Verifications/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 3
+            }
+          },
+          {
+            "id": 1602,
+            "definition": {
+              "type": "timeseries",
+              "title": "Verification Failure Reasons",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "sum", "value"],
+              "time": {},
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "name": "failures",
+                      "data_source": "metrics",
+                      "query": "sum:beneficiary.verification.failures.count{$env,$service} by {reason}.as_rate()"
+                    }
+                  ],
+                  "style": {
+                    "palette": "warm",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  },
+                  "display_type": "bars"
+                }
+              ],
+              "yaxis": {
+                "label": "Failures/sec",
+                "scale": "linear"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 3,
+              "width": 12,
+              "height": 3
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 29,
+        "width": 12,
+        "height": 7
+      }
+    }
+  ]
+}
