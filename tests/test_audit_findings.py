@@ -89,6 +89,9 @@ class _MockMC:
         self.submitted.append(proposal)
         return {"status": self._return_status, "proposal_id": proposal.id}
 
+    async def list_proposals(self) -> list[FundMovementProposal]:
+        return list(self.submitted)
+
 
 class _RejectingMC:
     """MakerChecker stub that always rejects proposals."""
@@ -562,14 +565,15 @@ class TestBHIGH4_RestartIdempotency:
         await agent1.handle_shortfall(event)
         assert len(mc1.submitted) == 1
 
-        # Second instance (restart) — fresh _pending_intents
-        agent2, bus2, mc2, *_ = _make_agent(balances={"USD": 100_000})
+        # Second instance (restart) — shares the same MC (simulates the same database)
+        agent2, bus2, mc2, *_ = _make_agent(balances={"USD": 100_000}, mc=mc1)
         await agent2.handle_shortfall(event)
 
-        # BUG: mc2 will also have 1 submission because _pending_intents is empty
-        assert len(mc2.submitted) == 0, (
-            "B-HIGH-4: After restart, _pending_intents is empty. "
-            "The same shortfall creates a duplicate proposal."
+        # After fix: only 1 proposal total — restart detected the existing submission
+        # and did NOT create a duplicate.  mc2 is mc1 (shared MC = shared DB).
+        assert len(mc2.submitted) == 1, (
+            "B-HIGH-4: After restart, _pending_intents must be restored from MC. "
+            "The same shortfall event must not create a duplicate proposal."
         )
 
 

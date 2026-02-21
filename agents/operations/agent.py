@@ -103,6 +103,8 @@ class OperationsAgent(BaseAgent):
 
         # Idempotency keys submitted this calendar day (reset on day rollover).
         self._pending_intents: set[str] = set()
+        # Whether _pending_intents has been restored from MC for today (restart safety).
+        self._intents_restored: bool = False
 
         # Cumulative deal amounts per currency for today (reset on day rollover).
         self._cumulative_deals: dict[str, Decimal] = {}
@@ -309,6 +311,10 @@ class OperationsAgent(BaseAgent):
         # Step 5: idempotency
         today_str       = self._cal.today(IN_RBI_FX, now_utc).isoformat()
         idempotency_key = f"{ccy}-{today_str}-shortfall"
+        # Restore from MC on the first shortfall of the day (survives process restarts).
+        if not self._intents_restored:
+            await self._restore_pending_intents(now_utc)
+            self._intents_restored = True
         if idempotency_key in self._pending_intents:
             logger.info(
                 "shortfall proposal already submitted today — skipping",
@@ -748,6 +754,42 @@ class OperationsAgent(BaseAgent):
                     extra={"proposal_id": proposal_id, "age_minutes": int(age.total_seconds() / 60)},
                 )
 
+    async def _restore_pending_intents(self, now_utc: datetime | None = None) -> None:
+        """
+        Repopulate _pending_intents from the MC's proposal list.
+
+        Called lazily on the first shortfall of each day so that idempotency
+        survives process restarts — a restarted agent won't re-submit proposals
+        that a previous instance already submitted today.
+
+        Uses getattr so this is a no-op for MC stubs that don't implement
+        list_proposals (e.g. simple unit-test mocks).
+        """
+        list_proposals = getattr(self._mc, "list_proposals", None)
+        if list_proposals is None:
+            return
+        try:
+            proposals = await list_proposals()
+        except Exception as exc:
+            logger.warning(
+                "could not restore pending intents from MC",
+                extra={"error": str(exc)},
+            )
+            return
+        if now_utc is None:
+            now_utc = datetime.now(timezone.utc)
+        today_str = self._cal.today(IN_RBI_FX, now_utc).isoformat()
+        restored = 0
+        for p in proposals:
+            if p.idempotency_key and today_str in p.idempotency_key:
+                self._pending_intents.add(p.idempotency_key)
+                restored += 1
+        if restored:
+            logger.info(
+                "pending intents restored from MC on startup",
+                extra={"count": restored, "date": today_str},
+            )
+
     def _check_day_rollover(self, now_utc: datetime) -> None:
         """Reset per-day state when the IST calendar date advances."""
         today = self._cal.today(IN_RBI_FX, now_utc)
@@ -760,6 +802,7 @@ class OperationsAgent(BaseAgent):
             self._cumulative_deals    = {}
             self._window_alerts_sent  = set()
             self._pending_intents     = set()
+            self._intents_restored    = False
 
     async def shutdown(self) -> None:
         """Gracefully stop the window-monitoring loop."""
