@@ -7,8 +7,10 @@ import type { LiveEvent } from "@/lib/types"
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true"
 
 // SSE endpoint — no auth header needed (EventSource limitation)
-// Falls back to empty on server render (SSR has no window)
-const SSE_URL = "/api/v1/events/stream"
+// Use full URL when backend is cross-origin (NEXT_PUBLIC_API_URL set),
+// otherwise fall back to relative path for same-origin setups.
+const _API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ""
+const SSE_URL = `${_API_BASE}/api/v1/events/stream`
 
 export function useWebSocket() {
   const { setWsStatus, appendEvent } = useTmsStore()

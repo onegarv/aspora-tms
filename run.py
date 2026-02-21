@@ -134,6 +134,11 @@ async def main() -> None:
     await ops_agent.start()
     log.info("agents started", agents=["fx_analyst", "liquidity", "operations"])
 
+    # Attach agent references to app.state so /dev/trigger can reach them
+    app.state.fx_agent  = fx_analyst
+    app.state.liq_agent = liquidity_agent
+    app.state.ops_agent = ops_agent
+
     # ── Scheduler ─────────────────────────────────────────────────────────────
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
 

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiFetch, apiPut } from "@/lib/api"
-import type { RiskLimits, HolidayEntry } from "@/lib/types"
+import type { RiskLimits, HolidayCalendarMap } from "@/lib/types"
 
 export function useRiskLimits() {
   return useQuery({
@@ -23,7 +23,7 @@ export function useUpdateRiskLimit() {
 export function useHolidays() {
   return useQuery({
     queryKey: ["holidays"],
-    queryFn: () => apiFetch<HolidayEntry[]>("/api/v1/holidays"),
+    queryFn: () => apiFetch<HolidayCalendarMap>("/api/v1/holidays"),
     // Holidays don't change often
     staleTime: 10 * 60_000,
   })

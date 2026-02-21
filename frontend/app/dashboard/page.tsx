@@ -6,10 +6,12 @@ import { ExposureChart } from "@/components/ExposureChart"
 import { DealBlotter } from "@/components/DealBlotter"
 import { PnLChart } from "@/components/PnLChart"
 import { LiveEventFeed } from "@/components/LiveEventFeed"
+import { AgentSeeder } from "@/components/AgentSeeder"
 
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
+      <AgentSeeder />
       <div>
         <h1 className="text-xl font-bold">Treasury Dashboard</h1>
         <p className="text-sm text-muted-foreground">

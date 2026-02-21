@@ -90,13 +90,14 @@ class LiquidityAgent(BaseAgent):
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
     async def setup(self) -> None:
-        """Register event listeners and do initial Metabase data load."""
+        """Register event listeners and kick off Metabase data load in background."""
         await self.listen(REFORECAST_TRIGGER,    self._handle_reforecast)
         await self.listen(NOSTRO_BALANCE_UPDATE, self._handle_nostro_update)
         await self.listen(MARKET_BRIEF,          self._handle_market_brief)
 
+        # Fire-and-forget so slow Metabase/Redshift queries don't block server startup.
         loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self._load_market_data)
+        asyncio.ensure_future(loop.run_in_executor(None, self._load_market_data))
 
     async def run_daily(self) -> None:
         """

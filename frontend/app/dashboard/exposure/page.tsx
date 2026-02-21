@@ -6,10 +6,21 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ExposureChart } from "@/components/ExposureChart"
 import { useExposure } from "@/hooks/useDashboard"
 
+const MAX_OPEN_PCT = new Decimal("0.30")
+
+function toCr(val: string | null | undefined): Decimal {
+  if (!val) return new Decimal(0)
+  return new Decimal(val).div(10_000_000)
+}
+
 export default function ExposurePage() {
   const { data: exposure, isLoading } = useExposure()
 
-  const maxOpenPct = new Decimal("0.30") // from settings: max_open_exposure_pct
+  const total = toCr(exposure?.total_inr_required)
+  const covered = toCr(exposure?.covered_inr)
+  const open = toCr(exposure?.open_inr)
+  const openPct = total.gt(0) ? open.div(total) : new Decimal(0)
+  const isOverLimit = openPct.gt(MAX_OPEN_PCT)
 
   return (
     <div className="space-y-6">
@@ -39,14 +50,16 @@ export default function ExposurePage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-2xl font-bold tabular-nums">
-                      $
-                      {new Decimal(exposure.total_exposure_usd)
-                        .div(1_000_000)
-                        .toFixed(1)}
-                      M
+                      ₹{total.toFixed(2)}Cr
                     </p>
+                    {exposure.deal_count != null && (
+                      <p className="text-xs text-muted-foreground">
+                        {exposure.deal_count} deals
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
+
                 <Card>
                   <CardHeader className="pb-1">
                     <CardTitle className="text-xs text-muted-foreground">
@@ -55,22 +68,24 @@ export default function ExposurePage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-2xl font-bold tabular-nums text-green-600">
-                      $
-                      {new Decimal(exposure.covered_usd)
-                        .div(1_000_000)
-                        .toFixed(1)}
-                      M
+                      ₹{covered.toFixed(2)}Cr
                     </p>
+                    {exposure.blended_rate && (
+                      <p className="text-xs text-muted-foreground">
+                        @ {new Decimal(exposure.blended_rate).toFixed(4)}
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
+
                 <Card>
                   <CardHeader className="pb-1">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-xs text-muted-foreground">
                         Open (Uncovered)
                       </CardTitle>
-                      {new Decimal(exposure.open_pct).gt(maxOpenPct) && (
-                        <span className="text-[10px] text-destructive font-medium">
+                      {isOverLimit && (
+                        <span className="text-[10px] font-medium text-destructive">
                           OVER LIMIT
                         </span>
                       )}
@@ -79,20 +94,13 @@ export default function ExposurePage() {
                   <CardContent>
                     <p
                       className={`text-2xl font-bold tabular-nums ${
-                        new Decimal(exposure.open_pct).gt(maxOpenPct)
-                          ? "text-destructive"
-                          : ""
+                        isOverLimit ? "text-destructive" : ""
                       }`}
                     >
-                      $
-                      {new Decimal(exposure.open_usd)
-                        .div(1_000_000)
-                        .toFixed(1)}
-                      M
+                      ₹{open.toFixed(2)}Cr
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Decimal(exposure.open_pct).mul(100).toFixed(1)}% of
-                      total
+                      {openPct.mul(100).toFixed(1)}% of total
                     </p>
                   </CardContent>
                 </Card>

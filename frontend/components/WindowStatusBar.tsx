@@ -3,12 +3,12 @@
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useWindows } from "@/hooks/useDashboard"
-import type { BankingWindow, WindowStatus } from "@/lib/types"
+import type { BankingWindow } from "@/lib/types"
 import { Clock } from "lucide-react"
 
-function statusVariant(status: WindowStatus) {
-  if (status === "OPEN") return "default" as const
-  if (status === "CLOSING") return "destructive" as const
+function statusVariant(status: string) {
+  if (status === "open") return "default" as const
+  if (status === "closing") return "destructive" as const
   return "secondary" as const
 }
 
@@ -17,9 +17,9 @@ function WindowChip({ window: w }: { window: BankingWindow }) {
     <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-2">
       <div className="flex flex-col">
         <span className="text-xs font-semibold">
-          {w.currency} / {w.system}
+          {w.currency} / {w.rail.toUpperCase()}
         </span>
-        {w.status === "CLOSING" && w.minutes_until_close !== undefined && (
+        {w.status === "closing" && w.minutes_until_close != null && (
           <span className="flex items-center gap-1 text-[10px] text-destructive">
             <Clock className="size-3" />
             {w.minutes_until_close}m left
@@ -27,7 +27,7 @@ function WindowChip({ window: w }: { window: BankingWindow }) {
         )}
       </div>
       <Badge variant={statusVariant(w.status)} className="text-[10px]">
-        {w.status}
+        {w.status.toUpperCase()}
       </Badge>
     </div>
   )
@@ -49,7 +49,7 @@ export function WindowStatusBar() {
   return (
     <div className="flex flex-wrap gap-3">
       {(windows ?? []).map((w) => (
-        <WindowChip key={w.id} window={w} />
+        <WindowChip key={`${w.currency}-${w.rail}`} window={w} />
       ))}
     </div>
   )

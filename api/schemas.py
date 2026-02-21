@@ -41,6 +41,15 @@ class BalanceDetail(BaseModel):
     total: str
 
 
+class NostroBalanceResponse(BaseModel):
+    """Shape expected by BalanceGrid on the frontend."""
+    currency: str
+    balance: str        # = total balance from tracker
+    available: str
+    reserved: str
+    last_updated: str   # ISO-8601 UTC timestamp
+
+
 # ── Proposal schemas ──────────────────────────────────────────────────────────
 
 class ProposalSummary(BaseModel):
