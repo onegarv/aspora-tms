@@ -739,10 +739,10 @@ class OperationsAgent(BaseAgent):
 
     async def _emit_nostro_balances(self, correlation_id: str | None = None) -> None:
         """Publish current available balance for each monitored currency."""
-        balances: dict[str, str] = {}
+        balances: dict[str, float] = {}
         for ccy in self._monitored_currencies:
             try:
-                balances[ccy] = str(self._fm.available_balance(ccy))
+                balances[ccy] = float(self._fm.available_balance(ccy))
             except Exception as exc:
                 logger.warning(
                     "balance query failed",
